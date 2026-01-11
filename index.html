@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Viewer - Firebase Database</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <!-- PDF.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1a73e8 0%, #6c8ef5 100%);
+            color: white;
+            padding: 25px 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 6px 20px rgba(26, 115, 232, 0.2);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .firebase-path {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            word-break: break-all;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 25px;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .sidebar {
+            background-color: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            height: fit-content;
+        }
+
+        .pdf-list {
+            background-color: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        h2 {
+            color: #1a73e8;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #eaeaea;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        h2 i {
+            font-size: 1.4rem;
+        }
+
+        .filter-section {
+            margin-bottom: 25px;
+        }
+
+        .filter-input {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid #e1e5eb;
+            border-radius: 10px;
+            font-size: 1rem;
+            margin-bottom: 15px;
+            transition: border-color 0.3s;
+        }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: #1a73e8;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background-color: #1a73e8;
+            color: white;
+            flex: 1;
+        }
+
+        .btn-primary:hover {
+            background-color: #0d62d9;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background-color: #f1f3f4;
+            color: #5f6368;
+            flex: 1;
+        }
+
+        .btn-secondary:hover {
+            background-color: #e3e5e7;
+        }
+
+        .pdf-item {
+            background-color: #f8f9fa;
+            border-left: 4px solid #1a73e8;
+            padding: 18px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .pdf-item:hover {
+            background-color: #e8f0fe;
+            transform: translateX(5px);
+        }
+
+        .pdf-item.active {
+            background-color: #e3f2fd;
+            border-left-color: #0d62d9;
+        }
+
+        .pdf-info h3 {
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+            color: #202124;
+        }
+
+        .pdf-meta {
+            display: flex;
+            gap: 15px;
+            color: #5f6368;
+            font-size: 0.85rem;
+        }
+
+        .pdf-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            color: #5f6368;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 5px;
+            transition: color 0.3s;
+        }
+
+        .action-btn:hover {
+            color: #1a73e8;
+        }
+
+        .viewer-container {
+            background-color: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            margin-top: 25px;
+        }
+
+        .pdf-viewer {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #e1e5eb;
+            border-radius: 8px;
+            overflow: auto;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .canvas-container {
+            margin: 20px auto;
+            text-align: center;
+        }
+
+        .viewer-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eaeaea;
+        }
+
+        .page-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .page-nav {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .page-input {
+            width: 60px;
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #5f6368;
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(26, 115, 232, 0.2);
+            border-top: 4px solid #1a73e8;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: #5f6368;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: #dadce0;
+        }
+
+        .firebase-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 0.9rem;
+        }
+
+        .status-connected {
+            background-color: #e6f4ea;
+            color: #137333;
+        }
+
+        .status-disconnected {
+            background-color: #fce8e6;
+            color: #c5221f;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .connected .status-dot {
+            background-color: #137333;
+        }
+
+        .disconnected .status-dot {
+            background-color: #c5221f;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eaeaea;
+            color: #5f6368;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <div>
+                    <h1><i class="fas fa-file-pdf"></i> Firebase PDF Manager</h1>
+                    <p class="subtitle">View and manage PDF files stored in Firebase Realtime Database</p>
+                </div>
+                <div class="firebase-path">
+                    <i class="fas fa-database"></i> schooladmin-51cdd-default-rtdb.firebaseio.com/homeworks
+                </div>
+            </div>
+        </header>
+
+        <div class="firebase-status" id="connectionStatus">
+            <div class="status-dot"></div>
+            <span>Connecting to Firebase...</span>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <h2><i class="fas fa-filter"></i> Filter & Controls</h2>
+                
+                <div class="filter-section">
+                    <input type="text" id="searchInput" class="filter-input" placeholder="Search PDFs by chapter name...">
+                    
+                    <div class="filter-buttons">
+                        <button class="btn btn-primary" id="loadPdfsBtn">
+                            <i class="fas fa-sync-alt"></i> Load PDFs
+                        </button>
+                        <button class="btn btn-secondary" id="clearFilterBtn">
+                            <i class="fas fa-times"></i> Clear
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="filter-section">
+                    <h3><i class="fas fa-info-circle"></i> Database Info</h3>
+                    <p>Path: <code>/homeworks</code></p>
+                    <p>Total PDFs: <span id="pdfCount">0</span></p>
+                    <p>Selected PDF: <span id="selectedPdf">None</span></p>
+                </div>
+                
+                <div class="filter-section">
+                    <h3><i class="fas fa-fire"></i> Firebase Configuration</h3>
+                    <p>This app connects to your Firebase Realtime Database to retrieve PDF metadata stored in the "homeworks" node.</p>
+                    <p>Each entry should contain:</p>
+                    <ul style="padding-left: 20px; margin-top: 10px;">
+                        <li>chapterName</li>
+                        <li>compressionLevel</li>
+                        <li>createdAt (timestamp)</li>
+                        <li>createdDate</li>
+                        <li>PDF file URL (if stored)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="pdf-list">
+                <h2><i class="fas fa-list"></i> Available PDFs</h2>
+                <div id="pdfListContainer">
+                    <div class="empty-state">
+                        <i class="fas fa-file-pdf"></i>
+                        <h3>No PDFs Loaded</h3>
+                        <p>Click "Load PDFs" to retrieve PDFs from Firebase Database</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="viewer-container" id="viewerContainer" style="display: none;">
+            <div class="viewer-controls">
+                <h2><i class="fas fa-eye"></i> PDF Viewer</h2>
+                <div class="page-controls">
+                    <div class="page-nav">
+                        <button class="btn btn-secondary" id="prevPage">
+                            <i class="fas fa-chevron-left"></i> Previous
+                        </button>
+                        <span>Page <span id="currentPage">1</span> of <span id="totalPages">1</span></span>
+                        <button class="btn btn-secondary" id="nextPage">
+                            Next <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    <div class="page-nav">
+                        <input type="number" id="pageInput" class="page-input" min="1" value="1">
+                        <button class="btn btn-secondary" id="goToPage">Go</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="pdf-viewer" id="pdfViewer">
+                <div class="empty-state">
+                    <i class="fas fa-file-pdf"></i>
+                    <h3>No PDF Selected</h3>
+                    <p>Select a PDF from the list to view it here</p>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Firebase PDF Manager &copy; 2023 | Connected to schooladmin-51cdd-default-rtdb.firebaseio.com</p>
+            <p>Note: This application reads PDF metadata from Firebase Realtime Database. Actual PDF files should be stored separately (e.g., Firebase Storage).</p>
+        </footer>
+    </div>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            databaseURL: "https://schooladmin-51cdd-default-rtdb.firebaseio.com"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        
+        // DOM Elements
+        const pdfListContainer = document.getElementById('pdfListContainer');
+        const pdfViewer = document.getElementById('pdfViewer');
+        const viewerContainer = document.getElementById('viewerContainer');
+        const loadPdfsBtn = document.getElementById('loadPdfsBtn');
+        const clearFilterBtn = document.getElementById('clearFilterBtn');
+        const searchInput = document.getElementById('searchInput');
+        const pdfCount = document.getElementById('pdfCount');
+        const selectedPdf = document.getElementById('selectedPdf');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const prevPageBtn = document.getElementById('prevPage');
+        const nextPageBtn = document.getElementById('nextPage');
+        const currentPageSpan = document.getElementById('currentPage');
+        const totalPagesSpan = document.getElementById('totalPages');
+        const pageInput = document.getElementById('pageInput');
+        const goToPageBtn = document.getElementById('goToPage');
+        
+        // Global variables
+        let pdfList = [];
+        let filteredPdfList = [];
+        let currentPdf = null;
+        let pdfDoc = null;
+        let pageNum = 1;
+        let pageRendering = false;
+        let pageNumPending = null;
+        
+        // Firebase connection status
+        const connectedRef = database.ref(".info/connected");
+        connectedRef.on("value", function(snap) {
+            if (snap.val() === true) {
+                connectionStatus.innerHTML = '<div class="status-dot"></div><span>Connected to Firebase Database</span>';
+                connectionStatus.className = "firebase-status status-connected";
+            } else {
+                connectionStatus.innerHTML = '<div class="status-dot"></div><span>Disconnected from Firebase Database</span>';
+                connectionStatus.className = "firebase-status status-disconnected";
+            }
+        });
+        
+        // Load PDFs from Firebase
+        async function loadPdfsFromFirebase() {
+            try {
+                // Show loading state
+                pdfListContainer.innerHTML = `
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>Loading PDFs from Firebase Database...</p>
+                    </div>
+                `;
+                
+                // Get reference to the homeworks path
+                const homeworksRef = database.ref('homeworks');
+                
+                // Fetch data
+                const snapshot = await homeworksRef.once('value');
+                const data = snapshot.val();
+                
+                // Process data
+                pdfList = [];
+                if (data) {
+                    Object.keys(data).forEach(key => {
+                        const pdfData = data[key];
+                        pdfList.push({
+                            id: key,
+                            chapterName: pdfData.chapterName || "Untitled Chapter",
+                            compressionLevel: pdfData.compressionLevel || "Unknown",
+                            createdAt: pdfData.createdAt || 0,
+                            createdDate: pdfData.createdDate || "Unknown date",
+                            deletionTimestamp: pdfData.deletionTimestamp || null,
+                            // In a real app, you would have a PDF URL here
+                            // For demo, we'll use a placeholder
+                            pdfUrl: pdfData.pdfUrl || `https://example.com/pdfs/${key}.pdf`
+                        });
+                    });
+                    
+                    // Sort by creation date (newest first)
+                    pdfList.sort((a, b) => b.createdAt - a.createdAt);
+                }
+                
+                // Update UI
+                updatePdfList();
+                
+            } catch (error) {
+                console.error("Error loading PDFs:", error);
+                pdfListContainer.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h3>Error Loading PDFs</h3>
+                        <p>${error.message}</p>
+                        <p>Check your Firebase configuration and database rules.</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Update PDF list UI
+        function updatePdfList() {
+            // Apply search filter
+            const searchTerm = searchInput.value.toLowerCase();
+            filteredPdfList = pdfList.filter(pdf => 
+                pdf.chapterName.toLowerCase().includes(searchTerm) ||
+                pdf.createdDate.toLowerCase().includes(searchTerm)
+            );
+            
+            // Update count
+            pdfCount.textContent = filteredPdfList.length;
+            
+            // If no PDFs found
+            if (filteredPdfList.length === 0) {
+                pdfListContainer.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-file-pdf"></i>
+                        <h3>No PDFs Found</h3>
+                        <p>${searchTerm ? 'Try a different search term' : 'No PDFs in the database'}</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Generate PDF list HTML
+            let html = '';
+            filteredPdfList.forEach((pdf, index) => {
+                const isActive = currentPdf && currentPdf.id === pdf.id ? 'active' : '';
+                const date = new Date(pdf.createdAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+                
+                html += `
+                    <div class="pdf-item ${isActive}" data-id="${pdf.id}" data-index="${index}">
+                        <div class="pdf-info">
+                            <h3>${pdf.chapterName}</h3>
+                            <div class="pdf-meta">
+                                <span><i class="far fa-calendar"></i> ${date}</span>
+                                <span><i class="fas fa-compress"></i> ${pdf.compressionLevel}</span>
+                                <span><i class="fas fa-database"></i> ${pdf.id.substring(0, 8)}...</span>
+                            </div>
+                        </div>
+                        <div class="pdf-actions">
+                            <button class="action-btn view-pdf-btn" title="View PDF">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="action-btn info-pdf-btn" title="PDF Info">
+                                <i class="fas fa-info-circle"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            pdfListContainer.innerHTML = html;
+            
+            // Add event listeners to PDF items
+            document.querySelectorAll('.pdf-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    if (!e.target.classList.contains('action-btn')) {
+                        const pdfId = this.getAttribute('data-id');
+                        const pdfIndex = this.getAttribute('data-index');
+                        selectPdf(pdfId, parseInt(pdfIndex));
+                    }
+                });
+            });
+            
+            // Add event listeners to view buttons
+            document.querySelectorAll('.view-pdf-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const pdfItem = this.closest('.pdf-item');
+                    const pdfId = pdfItem.getAttribute('data-id');
+                    const pdfIndex = pdfItem.getAttribute('data-index');
+                    selectPdf(pdfId, parseInt(pdfIndex));
+                });
+            });
+            
+            // Add event listeners to info buttons
+            document.querySelectorAll('.info-pdf-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const pdfItem = this.closest('.pdf-item');
+                    const pdfId = pdfItem.getAttribute('data-id');
+                    const pdf = pdfList.find(p => p.id === pdfId);
+                    
+                    if (pdf) {
+                        alert(`PDF Details:\n\nChapter: ${pdf.chapterName}\nID: ${pdf.id}\nCreated: ${pdf.createdDate}\nCompression: ${pdf.compressionLevel}\nTimestamp: ${pdf.createdAt}`);
+                    }
+                });
+            });
+        }
+        
+        // Select a PDF to view
+        function selectPdf(pdfId, pdfIndex) {
+            currentPdf = pdfList.find(p => p.id === pdfId);
+            
+            if (!currentPdf) return;
+            
+            // Update UI
+            selectedPdf.textContent = currentPdf.chapterName;
+            
+            // Highlight selected PDF
+            document.querySelectorAll('.pdf-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector(`.pdf-item[data-id="${pdfId}"]`).classList.add('active');
+            
+            // Show viewer
+            viewerContainer.style.display = 'block';
+            
+            // Load PDF for viewing
+            loadPdfForViewing(currentPdf);
+        }
+        
+        // Load PDF for viewing (using PDF.js)
+        async function loadPdfForViewing(pdf) {
+            // Show loading state
+            pdfViewer.innerHTML = `
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p>Loading PDF: ${pdf.chapterName}</p>
+                    <p>This is a demo. In a real app, PDF would be loaded from: ${pdf.pdfUrl}</p>
+                </div>
+            `;
+            
+            // For demo purposes, we'll load a sample PDF
+            // In a real app, you would load the actual PDF from the URL in your database
+            const pdfUrl = 'https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/web/compressed.tracemonkey-pldi-09.pdf';
+            
+            try {
+                // Initialize PDF.js
+                const loadingTask = pdfjsLib.getDocument(pdfUrl);
+                pdfDoc = await loadingTask.promise;
+                
+                // Update page info
+                totalPagesSpan.textContent = pdfDoc.numPages;
+                pageInput.max = pdfDoc.numPages;
+                
+                // Render first page
+                pageNum = 1;
+                renderPage(pageNum);
+                
+            } catch (error) {
+                console.error("Error loading PDF:", error);
+                pdfViewer.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h3>Error Loading PDF</h3>
+                        <p>${error.message}</p>
+                        <p>Demo PDF could not be loaded. In a real app, this would load from your database URL.</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Render PDF page
+        async function renderPage(num) {
+            pageRendering = true;
+            
+            try {
+                const page = await pdfDoc.getPage(num);
+                
+                // Set scale for canvas
+                const viewport = page.getViewport({ scale: 1.5 });
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                
+                // Render PDF page into canvas context
+                const renderContext = {
+                    canvasContext: context,
+                    viewport: viewport
+                };
+                
+                const renderTask = page.render(renderContext);
+                await renderTask.promise;
+                
+                // Display the page
+                pdfViewer.innerHTML = '';
+                const canvasContainer = document.createElement('div');
+                canvasContainer.className = 'canvas-container';
+                canvasContainer.appendChild(canvas);
+                pdfViewer.appendChild(canvasContainer);
+                
+                // Update page info
+                currentPageSpan.textContent = num;
+                pageInput.value = num;
+                
+                pageRendering = false;
+                
+                // If there's a pending page, render it
+                if (pageNumPending !== null) {
+                    renderPage(pageNumPending);
+                    pageNumPending = null;
+                }
+                
+            } catch (error) {
+                console.error("Error rendering PDF page:", error);
+            }
+        }
+        
+        // Queue rendering of a page
+        function queueRenderPage(num) {
+            if (pageRendering) {
+                pageNumPending = num;
+            } else {
+                renderPage(num);
+            }
+        }
+        
+        // Event Listeners
+        loadPdfsBtn.addEventListener('click', loadPdfsFromFirebase);
+        
+        clearFilterBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            updatePdfList();
+        });
+        
+        searchInput.addEventListener('input', updatePdfList);
+        
+        prevPageBtn.addEventListener('click', () => {
+            if (pageNum <= 1) return;
+            pageNum--;
+            queueRenderPage(pageNum);
+        });
+        
+        nextPageBtn.addEventListener('click', () => {
+            if (pageNum >= pdfDoc.numPages) return;
+            pageNum++;
+            queueRenderPage(pageNum);
+        });
+        
+        goToPageBtn.addEventListener('click', () => {
+            const pageNumber = parseInt(pageInput.value);
+            if (pageNumber >= 1 && pageNumber <= pdfDoc.numPages) {
+                pageNum = pageNumber;
+                queueRenderPage(pageNum);
+            }
+        });
+        
+        pageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                goToPageBtn.click();
+            }
+        });
+        
+        // Load PDFs on page load
+        window.addEventListener('DOMContentLoaded', loadPdfsFromFirebase);
+    </script>
+</body>
+</html>
