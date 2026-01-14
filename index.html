@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Homework Viewer</title>
+    <title>Homework Viewer - Public Access</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <!-- PDF.js Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -34,6 +35,7 @@
             color: white;
             padding: 20px 0;
             margin-bottom: 20px;
+            border-radius: 0 0 12px 12px;
         }
 
         .header-content {
@@ -242,54 +244,10 @@
             transform: translateY(-1px);
         }
 
-        /* Links Section */
-        .links-section {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            padding: 24px;
-            margin-bottom: 20px;
-        }
-
-        .links-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .link-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border: 1px solid #dadce0;
-        }
-
-        .link-icon {
-            font-size: 20px;
-            color: #1a73e8;
-        }
-
-        .link-text {
-            flex: 1;
-            font-size: 14px;
-            color: #202124;
-            word-break: break-all;
-        }
-
-        .open-link-btn {
-            background: #1a73e8;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
         }
 
         /* Modals */
@@ -373,6 +331,11 @@
             cursor: pointer;
         }
 
+        .btn-control:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .page-info {
             font-size: 16px;
             color: #5f6368;
@@ -407,6 +370,12 @@
             gap: 12px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             z-index: 3000;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
         }
 
         /* Loading */
@@ -440,6 +409,23 @@
             color: #5f6368;
         }
 
+        .error-state {
+            text-align: center;
+            padding: 40px;
+            color: #ea4335;
+        }
+
+        /* Public Access Badge */
+        .public-badge {
+            background: #34a853;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-left: 10px;
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 10px;
@@ -461,7 +447,7 @@
         <div class="header-content">
             <div class="app-title">
                 <i class="fas fa-book-open"></i>
-                <h1>Homework Viewer</h1>
+                <h1>Homework Viewer <span class="public-badge">Public Access</span></h1>
             </div>
             <button class="btn btn-open" id="refreshBtn">
                 <i class="fas fa-sync-alt"></i> Refresh
@@ -499,6 +485,13 @@
                     <span class="detail-value" id="filesCount">0</span>
                 </div>
             </div>
+            
+            <div class="divider"></div>
+            
+            <div style="text-align: center; padding: 10px; background: #e8f0fe; border-radius: 8px; margin-top: 16px;">
+                <i class="fas fa-globe" style="color: #1a73e8; margin-right: 8px;"></i>
+                <span style="color: #1a73e8; font-weight: 500;">This homework is publicly accessible. No login required.</span>
+            </div>
         </div>
 
         <!-- Images Section -->
@@ -522,15 +515,31 @@
                 <!-- PDFs will be loaded here -->
             </div>
         </div>
-
-        <!-- Links Section -->
-        <div class="links-section" id="linksSection" style="display: none;">
+        
+        <!-- Share Section -->
+        <div class="files-section" id="shareSection" style="display: none;">
             <div class="section-header">
-                <div class="section-title">External Links</div>
-                <div class="section-count" id="linksCount">0</div>
+                <div class="section-title">Share This Homework</div>
             </div>
-            <div class="links-list" id="linksList">
-                <!-- Links will be loaded here -->
+            <div style="text-align: center; padding: 20px;">
+                <p style="margin-bottom: 20px; color: #5f6368;">Share this link with anyone to give them access:</p>
+                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <input type="text" id="shareLink" style="flex: 1; padding: 12px; border: 1px solid #dadce0; border-radius: 8px; font-size: 14px;" readonly>
+                    <button class="btn btn-download" id="copyLinkBtn">
+                        <i class="far fa-copy"></i> Copy
+                    </button>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: center;">
+                    <button class="btn btn-open" id="shareWhatsapp">
+                        <i class="fab fa-whatsapp"></i> WhatsApp
+                    </button>
+                    <button class="btn btn-open" id="shareTelegram">
+                        <i class="fab fa-telegram"></i> Telegram
+                    </button>
+                    <button class="btn btn-open" id="shareEmail">
+                        <i class="fas fa-envelope"></i> Email
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -554,9 +563,14 @@
                         <i class="fas fa-chevron-right"></i>
                     </button>
                 </div>
-                <button class="btn btn-download" id="downloadPdf">
-                    <i class="fas fa-download"></i> Download
-                </button>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-open" id="openInNewTab">
+                        <i class="fas fa-external-link-alt"></i> Open
+                    </button>
+                    <button class="btn btn-download" id="downloadPdf">
+                        <i class="fas fa-download"></i> Download
+                    </button>
+                </div>
             </div>
             <div class="pdf-viewer" id="pdfViewer">
                 <div class="loading">
@@ -604,9 +618,6 @@
             measurementId: "G-V8C5DE930K"
         };
 
-        // Initialize Firebase (simplified - using REST API)
-        const databaseUrl = firebaseConfig.databaseURL;
-        
         // Get homework ID from URL
         const urlParams = new URLSearchParams(window.location.search);
         const homeworkId = urlParams.get('id') || '-Ohw7jwqCUrCimAmYgbM';
@@ -614,6 +625,7 @@
         // Global variables
         let homeworkData = null;
         let currentPdfUrl = null;
+        let currentPdfName = null;
         let pdfDoc = null;
         let currentPage = 1;
         let totalPages = 1;
@@ -634,9 +646,8 @@
         const pdfsSection = document.getElementById('pdfsSection');
         const pdfsGrid = document.getElementById('pdfsGrid');
         const pdfsCount = document.getElementById('pdfsCount');
-        const linksSection = document.getElementById('linksSection');
-        const linksList = document.getElementById('linksList');
-        const linksCount = document.getElementById('linksCount');
+        const shareSection = document.getElementById('shareSection');
+        const shareLink = document.getElementById('shareLink');
 
         // Modals
         const pdfModal = document.getElementById('pdfModal');
@@ -654,10 +665,15 @@
         const currentPageSpan = document.getElementById('currentPage');
         const totalPagesSpan = document.getElementById('totalPages');
         const downloadPdfBtn = document.getElementById('downloadPdf');
+        const openInNewTabBtn = document.getElementById('openInNewTab');
         const downloadImageBtn = document.getElementById('downloadImage');
 
         // Buttons
         const refreshBtn = document.getElementById('refreshBtn');
+        const copyLinkBtn = document.getElementById('copyLinkBtn');
+        const shareWhatsapp = document.getElementById('shareWhatsapp');
+        const shareTelegram = document.getElementById('shareTelegram');
+        const shareEmail = document.getElementById('shareEmail');
 
         // Toast
         const toast = document.getElementById('toast');
@@ -674,15 +690,79 @@
             }, 3000);
         }
 
-        // Load homework data
+        // Copy text to clipboard
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Link copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                showToast('Failed to copy', 'error');
+            });
+        }
+
+        // Get file name from URL
+        function getFileNameFromUrl(url) {
+            try {
+                // Remove query parameters
+                const cleanUrl = url.split('?')[0];
+                const segments = cleanUrl.split('/');
+                let fileName = segments.pop() || 'file';
+                
+                // Clean up the filename
+                fileName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+                return fileName.substring(0, 30) + (fileName.length > 30 ? '...' : '');
+            } catch {
+                return 'file.pdf';
+            }
+        }
+
+        // Convert Firebase Storage URL to download URL
+        function convertToDownloadUrl(storageUrl) {
+            try {
+                // If it's already a direct download URL, return it
+                if (storageUrl.includes('firebasestorage.googleapis.com') && 
+                    !storageUrl.includes('token=')) {
+                    // It's a Firebase Storage URL but not a download URL
+                    // Convert to download URL
+                    const url = new URL(storageUrl);
+                    // Remove any existing query parameters
+                    url.search = '';
+                    return url.toString();
+                }
+                
+                // If it's a gs:// URL
+                if (storageUrl.startsWith('gs://')) {
+                    const path = storageUrl.replace('gs://schooladmin-51cdd.appspot.com/', '');
+                    return `https://firebasestorage.googleapis.com/v0/b/schooladmin-51cdd.appspot.com/o/${encodeURIComponent(path)}?alt=media`;
+                }
+                
+                // If it's a relative path
+                if (!storageUrl.startsWith('http')) {
+                    return `https://firebasestorage.googleapis.com/v0/b/schooladmin-51cdd.appspot.com/o/${encodeURIComponent(storageUrl)}?alt=media`;
+                }
+                
+                return storageUrl;
+            } catch (error) {
+                console.error('Error converting URL:', error);
+                return storageUrl;
+            }
+        }
+
+        // Load homework data from Firebase Database
         async function loadHomeworkData() {
             try {
-                const response = await fetch(`${databaseUrl}/homeworks/${homeworkId}.json`);
+                showToast('Loading homework...', 'info');
+                
+                const response = await fetch(`${firebaseConfig.databaseURL}/homeworks/${homeworkId}.json`);
                 const data = await response.json();
                 
                 if (data) {
                     homeworkData = data;
-                    updateUI();
+                    await updateUI();
+                    showToast('Homework loaded successfully');
+                    
+                    // Log view to statistics
+                    logView();
                 } else {
                     showToast('Homework not found', 'error');
                 }
@@ -692,15 +772,64 @@
             }
         }
 
+        // Log view to statistics
+        async function logView() {
+            try {
+                const timestamp = Date.now();
+                const viewData = {
+                    timestamp: timestamp,
+                    userAgent: navigator.userAgent,
+                    platform: navigator.platform
+                };
+                
+                // Log to pdf_access_logs
+                await fetch(`${firebaseConfig.databaseURL}/pdf_access_logs/${homeworkId}/views/${timestamp}.json`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(viewData)
+                });
+                
+                // Update statistics
+                await updateStatistics();
+            } catch (error) {
+                console.error('Error logging view:', error);
+            }
+        }
+
+        // Update statistics
+        async function updateStatistics() {
+            try {
+                // Get current count
+                const statsResponse = await fetch(`${firebaseConfig.databaseURL}/pdf_statistics/${homeworkId}/view_count.json`);
+                const currentCount = await statsResponse.json() || 0;
+                
+                // Update count
+                await fetch(`${firebaseConfig.databaseURL}/pdf_statistics/${homeworkId}.json`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        view_count: currentCount + 1,
+                        last_accessed: Date.now()
+                    })
+                });
+            } catch (error) {
+                console.error('Error updating statistics:', error);
+            }
+        }
+
         // Update UI with homework data
-        function updateUI() {
+        async function updateUI() {
             if (!homeworkData) return;
 
             // Set basic info
             subjectTitle.textContent = homeworkData.chapterName || 'Homework';
             chapterName.textContent = homeworkData.chapterName || 'No chapter name';
             dateValue.textContent = homeworkData.createdDate || '--';
-            teacherValue.textContent = 'Teacher';
+            teacherValue.textContent = homeworkData.teacher || 'Unknown Teacher';
             
             // Set status
             const isActive = homeworkData.deletionTimestamp && 
@@ -720,12 +849,12 @@
                 }
             } else {
                 deleteValue.textContent = 'No auto-delete';
+                deleteValue.style.color = '#5f6368';
             }
 
             // Process files
             let imageUrls = [];
             let pdfUrls = [];
-            let links = [];
 
             // Check for imageUrls array
             if (homeworkData.imageUrls && Array.isArray(homeworkData.imageUrls)) {
@@ -737,13 +866,6 @@
                 pdfUrls = homeworkData.pdfUrls.filter(url => url && typeof url === 'string');
             }
 
-            // Check for links
-            if (homeworkData.links && typeof homeworkData.links === 'string') {
-                links = [homeworkData.links];
-            } else if (homeworkData.links && Array.isArray(homeworkData.links)) {
-                links = homeworkData.links.filter(link => link && typeof link === 'string');
-            }
-
             // For backward compatibility, check fileUrls
             if (homeworkData.fileUrls && Array.isArray(homeworkData.fileUrls)) {
                 homeworkData.fileUrls.forEach(url => {
@@ -753,8 +875,6 @@
                         imageUrls.push(url);
                     } else if (url.toLowerCase().includes('.pdf')) {
                         pdfUrls.push(url);
-                    } else if (url.toLowerCase().startsWith('http')) {
-                        links.push(url);
                     }
                 });
             }
@@ -762,7 +882,6 @@
             // Update counts
             imagesCount.textContent = imageUrls.length;
             pdfsCount.textContent = pdfUrls.length;
-            linksCount.textContent = links.length;
             filesCount.textContent = imageUrls.length + pdfUrls.length;
 
             // Show/hide sections
@@ -780,12 +899,12 @@
                 pdfsSection.style.display = 'none';
             }
 
-            if (links.length > 0) {
-                linksSection.style.display = 'block';
-                renderLinks(links);
-            } else {
-                linksSection.style.display = 'none';
-            }
+            // Always show share section for public access
+            shareSection.style.display = 'block';
+            
+            // Set share link
+            const currentUrl = window.location.href;
+            shareLink.value = currentUrl;
         }
 
         // Render images
@@ -794,21 +913,22 @@
             
             imageUrls.forEach((url, index) => {
                 const fileName = getFileNameFromUrl(url);
+                const downloadUrl = convertToDownloadUrl(url);
                 
                 const card = document.createElement('div');
                 card.className = 'file-card';
                 card.innerHTML = `
                     <div class="file-preview">
-                        <img src="${url}" alt="${fileName}" loading="lazy" 
+                        <img src="${downloadUrl}" alt="${fileName}" loading="lazy" 
                              onerror="this.src='https://via.placeholder.com/300x200?text=Image+Error'">
                     </div>
                     <div class="file-info">
                         <div class="file-name" title="${fileName}">${fileName}</div>
                         <div class="file-actions">
-                            <button class="btn btn-open view-image" data-url="${url}" data-name="${fileName}">
+                            <button class="btn btn-open view-image" data-url="${downloadUrl}" data-name="${fileName}">
                                 <i class="fas fa-eye"></i> View
                             </button>
-                            <button class="btn btn-download download-image" data-url="${url}" data-name="${fileName}">
+                            <button class="btn btn-download download-image" data-url="${downloadUrl}" data-name="${fileName}">
                                 <i class="fas fa-download"></i> Save
                             </button>
                         </div>
@@ -828,10 +948,10 @@
             });
 
             document.querySelectorAll('.download-image').forEach(btn => {
-                btn.addEventListener('click', (e) => {
+                btn.addEventListener('click', async (e) => {
                     const url = e.target.closest('button').dataset.url;
                     const name = e.target.closest('button').dataset.name;
-                    downloadFile(url, name);
+                    await downloadFile(url, name, 'image');
                 });
             });
         }
@@ -842,6 +962,7 @@
             
             pdfUrls.forEach((url, index) => {
                 const fileName = getFileNameFromUrl(url);
+                const downloadUrl = convertToDownloadUrl(url);
                 
                 const card = document.createElement('div');
                 card.className = 'file-card';
@@ -852,10 +973,10 @@
                     <div class="file-info">
                         <div class="file-name" title="${fileName}">${fileName}</div>
                         <div class="file-actions">
-                            <button class="btn btn-open view-pdf" data-url="${url}" data-name="${fileName}">
+                            <button class="btn btn-open view-pdf" data-url="${downloadUrl}" data-name="${fileName}">
                                 <i class="fas fa-eye"></i> View
                             </button>
-                            <button class="btn btn-download download-pdf" data-url="${url}" data-name="${fileName}">
+                            <button class="btn btn-download download-pdf" data-url="${downloadUrl}" data-name="${fileName}">
                                 <i class="fas fa-download"></i> Save
                             </button>
                         </div>
@@ -875,78 +996,22 @@
             });
 
             document.querySelectorAll('.download-pdf').forEach(btn => {
-                btn.addEventListener('click', (e) => {
+                btn.addEventListener('click', async (e) => {
                     const url = e.target.closest('button').dataset.url;
                     const name = e.target.closest('button').dataset.name;
-                    downloadFile(url, name);
+                    await downloadFile(url, name, 'pdf');
                 });
             });
-        }
-
-        // Render links
-        function renderLinks(links) {
-            linksList.innerHTML = '';
-            
-            links.forEach((link, index) => {
-                let displayLink = link.trim();
-                if (!displayLink.startsWith('http')) {
-                    displayLink = 'https://' + displayLink;
-                }
-                
-                let domain = '';
-                try {
-                    const url = new URL(displayLink);
-                    domain = url.hostname;
-                } catch {
-                    domain = 'External Link';
-                }
-                
-                const linkItem = document.createElement('div');
-                linkItem.className = 'link-item';
-                linkItem.innerHTML = `
-                    <i class="fas fa-link link-icon"></i>
-                    <div class="link-text">
-                        <div style="font-weight: 500;">${domain}</div>
-                        <div style="font-size: 12px; color: #5f6368;">${displayLink.substring(0, 50)}${displayLink.length > 50 ? '...' : ''}</div>
-                    </div>
-                    <button class="open-link-btn" data-url="${displayLink}">
-                        <i class="fas fa-external-link-alt"></i> Open
-                    </button>
-                `;
-                
-                linksList.appendChild(linkItem);
-            });
-
-            // Add event listeners
-            document.querySelectorAll('.open-link-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const url = e.target.closest('button').dataset.url;
-                    window.open(url, '_blank', 'noopener,noreferrer');
-                });
-            });
-        }
-
-        // Get file name from URL
-        function getFileNameFromUrl(url) {
-            try {
-                const urlObj = new URL(url);
-                const path = urlObj.pathname;
-                const fileName = path.split('/').pop();
-                return fileName || 'file';
-            } catch {
-                const segments = url.split('/');
-                const fileName = segments.pop() || 'file';
-                return fileName.split('?')[0];
-            }
         }
 
         // Open PDF viewer
         function openPDFViewer(url, name) {
             currentPdfUrl = url;
+            currentPdfName = name;
             pdfModalTitle.textContent = name;
             pdfModal.style.display = 'flex';
             
-            // Reset PDF viewer
+            // Reset PDF viewer and controls
             pdfViewer.innerHTML = `
                 <div class="loading">
                     <div class="spinner"></div>
@@ -954,11 +1019,16 @@
                 </div>
             `;
             
+            prevPageBtn.disabled = true;
+            nextPageBtn.disabled = true;
+            downloadPdfBtn.disabled = true;
+            openInNewTabBtn.disabled = true;
+            
             // Load PDF
             loadPDF(url);
         }
 
-        // Load PDF using PDF.js - SIMPLIFIED VERSION
+        // Load PDF using PDF.js
         async function loadPDF(url) {
             try {
                 // Set PDF.js worker
@@ -966,9 +1036,12 @@
                     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
                 }
 
-                // Load PDF document
+                showToast('Loading PDF...', 'info');
+                
+                // Try to load PDF
                 const loadingTask = pdfjsLib.getDocument({
                     url: url,
+                    withCredentials: false,
                     cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
                     cMapPacked: true
                 });
@@ -980,29 +1053,49 @@
                 currentPage = 1;
                 currentPageSpan.textContent = currentPage;
                 
+                // Enable controls
+                prevPageBtn.disabled = currentPage <= 1;
+                nextPageBtn.disabled = currentPage >= totalPages;
+                downloadPdfBtn.disabled = false;
+                openInNewTabBtn.disabled = false;
+                
                 // Render first page
-                renderPage(currentPage);
+                await renderPage(currentPage);
                 
                 showToast('PDF loaded successfully');
                 
             } catch (error) {
                 console.error('Error loading PDF:', error);
                 pdfViewer.innerHTML = `
-                    <div class="empty-state">
-                        <div style="font-size: 48px; color: #ea4335; margin-bottom: 16px;">
+                    <div class="error-state">
+                        <div style="font-size: 48px; margin-bottom: 16px;">
                             <i class="fas fa-exclamation-triangle"></i>
                         </div>
-                        <h3>Error Loading PDF</h3>
-                        <p>Could not load the PDF file.</p>
-                        <p style="margin-top: 16px;">
+                        <h3>Cannot Load PDF in Viewer</h3>
+                        <p style="margin: 10px 0; color: #5f6368;">You can still access the PDF by:</p>
+                        <div style="display: flex; gap: 10px; margin: 20px 0; justify-content: center;">
                             <button class="btn btn-download" onclick="window.open('${url}', '_blank')">
                                 <i class="fas fa-external-link-alt"></i> Open in New Tab
                             </button>
-                        </p>
+                            <button class="btn btn-download" onclick="downloadFileDirect('${url}', '${currentPdfName}')">
+                                <i class="fas fa-download"></i> Download PDF
+                            </button>
+                        </div>
                     </div>
                 `;
-                showToast('Error loading PDF. Try opening in new tab.', 'error');
+                showToast('PDF viewer unavailable. Try downloading instead.', 'info');
             }
+        }
+
+        // Direct download function
+        function downloadFileDirect(url, fileName) {
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileName || getFileNameFromUrl(url);
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         // Render PDF page
@@ -1030,9 +1123,11 @@
                 pdfViewer.innerHTML = '';
                 pdfViewer.appendChild(canvas);
                 
-                // Update page info
+                // Update page info and controls
                 currentPage = pageNumber;
                 currentPageSpan.textContent = currentPage;
+                prevPageBtn.disabled = currentPage <= 1;
+                nextPageBtn.disabled = currentPage >= totalPages;
                 
             } catch (error) {
                 console.error('Error rendering page:', error);
@@ -1047,16 +1142,67 @@
             imageModal.style.display = 'flex';
         }
 
-        // Download file
-        function downloadFile(url, fileName) {
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = fileName || getFileNameFromUrl(url);
-            link.target = '_blank';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            showToast('Download started');
+        // Download file with logging
+        async function downloadFile(url, fileName, type = 'file') {
+            try {
+                showToast('Preparing download...', 'info');
+                
+                // Log download to statistics
+                await logDownload();
+                
+                // Create download link
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = fileName || getFileNameFromUrl(url);
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                showToast('Download started');
+                
+            } catch (error) {
+                console.error('Error downloading file:', error);
+                showToast('Error downloading file', 'error');
+            }
+        }
+
+        // Log download to statistics
+        async function logDownload() {
+            try {
+                const timestamp = Date.now();
+                const downloadData = {
+                    timestamp: timestamp,
+                    userAgent: navigator.userAgent,
+                    platform: navigator.platform
+                };
+                
+                // Log to pdf_access_logs
+                await fetch(`${firebaseConfig.databaseURL}/pdf_access_logs/${homeworkId}/downloads/${timestamp}.json`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(downloadData)
+                });
+                
+                // Update download statistics
+                const statsResponse = await fetch(`${firebaseConfig.databaseURL}/pdf_statistics/${homeworkId}/download_count.json`);
+                const currentCount = await statsResponse.json() || 0;
+                
+                await fetch(`${firebaseConfig.databaseURL}/pdf_statistics/${homeworkId}.json`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        download_count: currentCount + 1
+                    })
+                });
+            } catch (error) {
+                console.error('Error logging download:', error);
+            }
         }
 
         // Event Listeners
@@ -1080,22 +1226,49 @@
             }
         });
 
-        downloadPdfBtn.addEventListener('click', () => {
-            if (currentPdfUrl) {
-                const fileName = getFileNameFromUrl(currentPdfUrl);
-                downloadFile(currentPdfUrl, fileName);
+        downloadPdfBtn.addEventListener('click', async () => {
+            if (currentPdfUrl && currentPdfName) {
+                await downloadFile(currentPdfUrl, currentPdfName, 'pdf');
             }
         });
 
-        downloadImageBtn.addEventListener('click', () => {
+        openInNewTabBtn.addEventListener('click', () => {
+            if (currentPdfUrl) {
+                window.open(currentPdfUrl, '_blank');
+            }
+        });
+
+        downloadImageBtn.addEventListener('click', async () => {
             const url = fullImageView.src;
             const fileName = getFileNameFromUrl(url);
-            downloadFile(url, fileName);
+            await downloadFile(url, fileName, 'image');
         });
 
         refreshBtn.addEventListener('click', () => {
             loadHomeworkData();
-            showToast('Refreshing...', 'info');
+        });
+
+        copyLinkBtn.addEventListener('click', () => {
+            copyToClipboard(shareLink.value);
+        });
+
+        shareWhatsapp.addEventListener('click', () => {
+            const text = `Check out this homework: ${homeworkData?.chapterName || 'Homework'}\n${shareLink.value}`;
+            const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+            window.open(url, '_blank');
+        });
+
+        shareTelegram.addEventListener('click', () => {
+            const text = `Check out this homework: ${homeworkData?.chapterName || 'Homework'}\n${shareLink.value}`;
+            const url = `https://t.me/share/url?url=${encodeURIComponent(shareLink.value)}&text=${encodeURIComponent(homeworkData?.chapterName || 'Homework')}`;
+            window.open(url, '_blank');
+        });
+
+        shareEmail.addEventListener('click', () => {
+            const subject = `Homework: ${homeworkData?.chapterName || 'Homework'}`;
+            const body = `Check out this homework:\n\n${shareLink.value}`;
+            const url = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            window.open(url, '_blank');
         });
 
         // Close modals on overlay click
@@ -1122,6 +1295,9 @@
         // Initialize
         window.addEventListener('DOMContentLoaded', () => {
             loadHomeworkData();
+            
+            // Make downloadFileDirect available globally
+            window.downloadFileDirect = downloadFileDirect;
         });
     </script>
 </body>
