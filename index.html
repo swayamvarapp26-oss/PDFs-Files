@@ -8,7 +8,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <!-- PDF.js Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -426,6 +425,13 @@
             margin-left: 10px;
         }
 
+        /* Iframe Container for PDF */
+        .iframe-container {
+            width: 100%;
+            height: 600px;
+            border: none;
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 10px;
@@ -544,7 +550,7 @@
         </div>
     </div>
 
-    <!-- PDF Viewer Modal -->
+    <!-- PDF Viewer Modal (Using iframe instead of PDF.js) -->
     <div class="modal-overlay" id="pdfModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -552,23 +558,12 @@
                 <button class="modal-close" id="closePdfModal">&times;</button>
             </div>
             <div class="pdf-controls">
-                <div class="page-controls">
-                    <button class="btn-control" id="prevPage">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    <span class="page-info">
-                        Page <span id="currentPage">1</span> of <span id="totalPages">1</span>
-                    </span>
-                    <button class="btn-control" id="nextPage">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                </div>
                 <div style="display: flex; gap: 10px;">
                     <button class="btn btn-open" id="openInNewTab">
-                        <i class="fas fa-external-link-alt"></i> Open
+                        <i class="fas fa-external-link-alt"></i> Open in New Tab
                     </button>
                     <button class="btn btn-download" id="downloadPdf">
-                        <i class="fas fa-download"></i> Download
+                        <i class="fas fa-download"></i> Download PDF
                     </button>
                 </div>
             </div>
@@ -626,9 +621,6 @@
         let homeworkData = null;
         let currentPdfUrl = null;
         let currentPdfName = null;
-        let pdfDoc = null;
-        let currentPage = 1;
-        let totalPages = 1;
 
         // DOM Elements
         const subjectTitle = document.getElementById('subjectTitle');
@@ -659,21 +651,15 @@
         const fullImageView = document.getElementById('fullImageView');
         const imageModalTitle = document.getElementById('imageModalTitle');
 
-        // PDF Controls
-        const prevPageBtn = document.getElementById('prevPage');
-        const nextPageBtn = document.getElementById('nextPage');
-        const currentPageSpan = document.getElementById('currentPage');
-        const totalPagesSpan = document.getElementById('totalPages');
-        const downloadPdfBtn = document.getElementById('downloadPdf');
-        const openInNewTabBtn = document.getElementById('openInNewTab');
-        const downloadImageBtn = document.getElementById('downloadImage');
-
         // Buttons
         const refreshBtn = document.getElementById('refreshBtn');
         const copyLinkBtn = document.getElementById('copyLinkBtn');
         const shareWhatsapp = document.getElementById('shareWhatsapp');
         const shareTelegram = document.getElementById('shareTelegram');
         const shareEmail = document.getElementById('shareEmail');
+        const downloadPdfBtn = document.getElementById('downloadPdf');
+        const openInNewTabBtn = document.getElementById('openInNewTab');
+        const downloadImageBtn = document.getElementById('downloadImage');
 
         // Toast
         const toast = document.getElementById('toast');
@@ -709,46 +695,79 @@
                 let fileName = segments.pop() || 'file';
                 
                 // Clean up the filename
-                fileName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+                fileName = decodeURIComponent(fileName);
                 return fileName.substring(0, 30) + (fileName.length > 30 ? '...' : '');
             } catch {
-                return 'file.pdf';
+                return 'file';
             }
         }
 
-        // Convert Firebase Storage URL to download URL
-        function convertToDownloadUrl(storageUrl) {
+        // Extract path from Firebase Storage URL
+        function extractStoragePath(url) {
             try {
-                // If it's already a direct download URL, return it
-                if (storageUrl.includes('firebasestorage.googleapis.com') && 
-                    !storageUrl.includes('token=')) {
-                    // It's a Firebase Storage URL but not a download URL
-                    // Convert to download URL
-                    const url = new URL(storageUrl);
-                    // Remove any existing query parameters
-                    url.search = '';
-                    return url.toString();
+                // If it's a Firebase Storage URL
+                if (url.includes('firebasestorage.googleapis.com')) {
+                    const urlObj = new URL(url);
+                    // Path format: /v0/b/bucket-name.appspot.com/o/path%2Fto%2Ffile
+                    const pathParts = urlObj.pathname.split('/');
+                    // Remove first 4 parts: /v0/b/bucket-name.appspot.com/o/
+                    const encodedPath = pathParts.slice(5).join('/');
+                    return decodeURIComponent(encodedPath);
                 }
                 
                 // If it's a gs:// URL
-                if (storageUrl.startsWith('gs://')) {
-                    const path = storageUrl.replace('gs://schooladmin-51cdd.appspot.com/', '');
-                    return `https://firebasestorage.googleapis.com/v0/b/schooladmin-51cdd.appspot.com/o/${encodeURIComponent(path)}?alt=media`;
+                if (url.startsWith('gs://')) {
+                    return url.replace('gs://schooladmin-51cdd.appspot.com/', '');
                 }
                 
-                // If it's a relative path
-                if (!storageUrl.startsWith('http')) {
-                    return `https://firebasestorage.googleapis.com/v0/b/schooladmin-51cdd.appspot.com/o/${encodeURIComponent(storageUrl)}?alt=media`;
-                }
-                
-                return storageUrl;
+                // If it's a relative path or just a filename
+                return url;
             } catch (error) {
-                console.error('Error converting URL:', error);
-                return storageUrl;
+                console.error('Error extracting storage path:', error);
+                return url;
             }
         }
 
-        // Load homework data from Firebase Database
+        // Get Firebase Storage download URL using REST API
+        async function getFirebaseDownloadUrl(storagePath) {
+            try {
+                showToast('Getting download URL...', 'info');
+                
+                // Extract just the filename if it's a full path
+                const cleanPath = storagePath.replace(/^.*[\\\/]/, '');
+                
+                // Encode the path for URL
+                const encodedPath = encodeURIComponent(cleanPath);
+                
+                // Get download token first
+                const tokenUrl = `https://firebasestorage.googleapis.com/v0/b/schooladmin-51cdd.appspot.com/o/${encodedPath}`;
+                
+                const tokenResponse = await fetch(tokenUrl);
+                
+                if (!tokenResponse.ok) {
+                    throw new Error(`Failed to get token: ${tokenResponse.status}`);
+                }
+                
+                const tokenData = await tokenResponse.json();
+                
+                // Construct download URL with token
+                const downloadUrl = `https://firebasestorage.googleapis.com/v0/b/schooladmin-51cdd.appspot.com/o/${encodedPath}?alt=media&token=${tokenData.downloadTokens}`;
+                
+                return downloadUrl;
+            } catch (error) {
+                console.error('Error getting Firebase download URL:', error);
+                
+                // Fallback: Try Google Viewer for PDFs
+                if (storagePath.toLowerCase().endsWith('.pdf')) {
+                    const fallbackUrl = `https://drive.google.com/viewerng/viewer?embedded=true&url=${encodeURIComponent(storagePath)}`;
+                    return fallbackUrl;
+                }
+                
+                throw error;
+            }
+        }
+
+        // Load homework data
         async function loadHomeworkData() {
             try {
                 showToast('Loading homework...', 'info');
@@ -761,63 +780,15 @@
                     await updateUI();
                     showToast('Homework loaded successfully');
                     
-                    // Log view to statistics
-                    logView();
+                    // Update share link
+                    const currentUrl = window.location.href;
+                    shareLink.value = currentUrl;
                 } else {
                     showToast('Homework not found', 'error');
                 }
             } catch (error) {
                 console.error('Error loading homework:', error);
                 showToast('Error loading homework data', 'error');
-            }
-        }
-
-        // Log view to statistics
-        async function logView() {
-            try {
-                const timestamp = Date.now();
-                const viewData = {
-                    timestamp: timestamp,
-                    userAgent: navigator.userAgent,
-                    platform: navigator.platform
-                };
-                
-                // Log to pdf_access_logs
-                await fetch(`${firebaseConfig.databaseURL}/pdf_access_logs/${homeworkId}/views/${timestamp}.json`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(viewData)
-                });
-                
-                // Update statistics
-                await updateStatistics();
-            } catch (error) {
-                console.error('Error logging view:', error);
-            }
-        }
-
-        // Update statistics
-        async function updateStatistics() {
-            try {
-                // Get current count
-                const statsResponse = await fetch(`${firebaseConfig.databaseURL}/pdf_statistics/${homeworkId}/view_count.json`);
-                const currentCount = await statsResponse.json() || 0;
-                
-                // Update count
-                await fetch(`${firebaseConfig.databaseURL}/pdf_statistics/${homeworkId}.json`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        view_count: currentCount + 1,
-                        last_accessed: Date.now()
-                    })
-                });
-            } catch (error) {
-                console.error('Error updating statistics:', error);
             }
         }
 
@@ -887,48 +858,43 @@
             // Show/hide sections
             if (imageUrls.length > 0) {
                 imagesSection.style.display = 'block';
-                renderImages(imageUrls);
+                await renderImages(imageUrls);
             } else {
                 imagesSection.style.display = 'none';
             }
 
             if (pdfUrls.length > 0) {
                 pdfsSection.style.display = 'block';
-                renderPDFs(pdfUrls);
+                await renderPDFs(pdfUrls);
             } else {
                 pdfsSection.style.display = 'none';
             }
 
             // Always show share section for public access
             shareSection.style.display = 'block';
-            
-            // Set share link
-            const currentUrl = window.location.href;
-            shareLink.value = currentUrl;
         }
 
         // Render images
-        function renderImages(imageUrls) {
+        async function renderImages(imageUrls) {
             imagesGrid.innerHTML = '';
             
-            imageUrls.forEach((url, index) => {
+            for (let url of imageUrls) {
                 const fileName = getFileNameFromUrl(url);
-                const downloadUrl = convertToDownloadUrl(url);
                 
                 const card = document.createElement('div');
                 card.className = 'file-card';
                 card.innerHTML = `
                     <div class="file-preview">
-                        <img src="${downloadUrl}" alt="${fileName}" loading="lazy" 
-                             onerror="this.src='https://via.placeholder.com/300x200?text=Image+Error'">
+                        <img src="${url}" alt="${fileName}" loading="lazy" 
+                             onerror="this.onerror=null; this.src='https://via.placeholder.com/300x200?text=Image+Not+Available';">
                     </div>
                     <div class="file-info">
                         <div class="file-name" title="${fileName}">${fileName}</div>
                         <div class="file-actions">
-                            <button class="btn btn-open view-image" data-url="${downloadUrl}" data-name="${fileName}">
+                            <button class="btn btn-open view-image" data-url="${url}" data-name="${fileName}">
                                 <i class="fas fa-eye"></i> View
                             </button>
-                            <button class="btn btn-download download-image" data-url="${downloadUrl}" data-name="${fileName}">
+                            <button class="btn btn-download download-image" data-url="${url}" data-name="${fileName}">
                                 <i class="fas fa-download"></i> Save
                             </button>
                         </div>
@@ -936,7 +902,7 @@
                 `;
                 
                 imagesGrid.appendChild(card);
-            });
+            }
 
             // Add event listeners
             document.querySelectorAll('.view-image').forEach(btn => {
@@ -951,18 +917,17 @@
                 btn.addEventListener('click', async (e) => {
                     const url = e.target.closest('button').dataset.url;
                     const name = e.target.closest('button').dataset.name;
-                    await downloadFile(url, name, 'image');
+                    await downloadFile(url, name);
                 });
             });
         }
 
         // Render PDFs
-        function renderPDFs(pdfUrls) {
+        async function renderPDFs(pdfUrls) {
             pdfsGrid.innerHTML = '';
             
-            pdfUrls.forEach((url, index) => {
+            for (let url of pdfUrls) {
                 const fileName = getFileNameFromUrl(url);
-                const downloadUrl = convertToDownloadUrl(url);
                 
                 const card = document.createElement('div');
                 card.className = 'file-card';
@@ -973,10 +938,10 @@
                     <div class="file-info">
                         <div class="file-name" title="${fileName}">${fileName}</div>
                         <div class="file-actions">
-                            <button class="btn btn-open view-pdf" data-url="${downloadUrl}" data-name="${fileName}">
+                            <button class="btn btn-open view-pdf" data-url="${url}" data-name="${fileName}">
                                 <i class="fas fa-eye"></i> View
                             </button>
-                            <button class="btn btn-download download-pdf" data-url="${downloadUrl}" data-name="${fileName}">
+                            <button class="btn btn-download download-pdf" data-url="${url}" data-name="${fileName}">
                                 <i class="fas fa-download"></i> Save
                             </button>
                         </div>
@@ -984,34 +949,72 @@
                 `;
                 
                 pdfsGrid.appendChild(card);
-            });
+            }
 
             // Add event listeners
             document.querySelectorAll('.view-pdf').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const url = e.target.closest('button').dataset.url;
-                    const name = e.target.closest('button').dataset.name;
-                    openPDFViewer(url, name);
+                btn.addEventListener('click', async (e) => {
+                    const button = e.target.closest('button');
+                    const originalUrl = button.dataset.url;
+                    const name = button.dataset.name;
+                    
+                    button.disabled = true;
+                    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+                    
+                    try {
+                        // Extract storage path and get download URL
+                        const storagePath = extractStoragePath(originalUrl);
+                        const downloadUrl = await getFirebaseDownloadUrl(storagePath);
+                        
+                        openPDFViewer(downloadUrl, name);
+                    } catch (error) {
+                        console.error('Error opening PDF:', error);
+                        showToast('Error opening PDF. Try downloading instead.', 'error');
+                        // Fallback: Try opening directly
+                        openPDFViewer(originalUrl, name);
+                    } finally {
+                        button.disabled = false;
+                        button.innerHTML = '<i class="fas fa-eye"></i> View';
+                    }
                 });
             });
 
             document.querySelectorAll('.download-pdf').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
-                    const url = e.target.closest('button').dataset.url;
-                    const name = e.target.closest('button').dataset.name;
-                    await downloadFile(url, name, 'pdf');
+                    const button = e.target.closest('button');
+                    const originalUrl = button.dataset.url;
+                    const name = button.dataset.name;
+                    
+                    button.disabled = true;
+                    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                    
+                    try {
+                        // Extract storage path and get download URL
+                        const storagePath = extractStoragePath(originalUrl);
+                        const downloadUrl = await getFirebaseDownloadUrl(storagePath);
+                        
+                        await downloadFile(downloadUrl, name);
+                    } catch (error) {
+                        console.error('Error downloading PDF:', error);
+                        showToast('Error downloading PDF', 'error');
+                        // Fallback: Try downloading directly
+                        await downloadFile(originalUrl, name);
+                    } finally {
+                        button.disabled = false;
+                        button.innerHTML = '<i class="fas fa-download"></i> Save';
+                    }
                 });
             });
         }
 
-        // Open PDF viewer
+        // Open PDF viewer using iframe
         function openPDFViewer(url, name) {
             currentPdfUrl = url;
             currentPdfName = name;
             pdfModalTitle.textContent = name;
             pdfModal.style.display = 'flex';
             
-            // Reset PDF viewer and controls
+            // Clear and show loading
             pdfViewer.innerHTML = `
                 <div class="loading">
                     <div class="spinner"></div>
@@ -1019,120 +1022,40 @@
                 </div>
             `;
             
-            prevPageBtn.disabled = true;
-            nextPageBtn.disabled = true;
-            downloadPdfBtn.disabled = true;
-            openInNewTabBtn.disabled = true;
+            // Set download button URL
+            downloadPdfBtn.onclick = () => downloadFile(url, name);
+            openInNewTabBtn.onclick = () => window.open(url, '_blank');
             
-            // Load PDF
-            loadPDF(url);
-        }
-
-        // Load PDF using PDF.js
-        async function loadPDF(url) {
-            try {
-                // Set PDF.js worker
-                if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-                    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+            // Create iframe for PDF
+            setTimeout(() => {
+                if (url.includes('drive.google.com/viewer')) {
+                    // Use Google Docs viewer
+                    pdfViewer.innerHTML = `
+                        <iframe src="${url}" class="iframe-container" frameborder="0"></iframe>
+                    `;
+                } else if (url.includes('.pdf')) {
+                    // Use browser's built-in PDF viewer
+                    pdfViewer.innerHTML = `
+                        <iframe src="${url}" class="iframe-container" frameborder="0"></iframe>
+                    `;
+                } else {
+                    // Try to open as iframe anyway
+                    pdfViewer.innerHTML = `
+                        <iframe src="${url}" class="iframe-container" frameborder="0"></iframe>
+                        <div style="text-align: center; margin-top: 20px;">
+                            <p>If PDF doesn't load, try:</p>
+                            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 10px;">
+                                <button class="btn btn-open" onclick="window.open('${url}', '_blank')">
+                                    <i class="fas fa-external-link-alt"></i> Open in New Tab
+                                </button>
+                                <button class="btn btn-download" onclick="downloadFile('${url}', '${name}')">
+                                    <i class="fas fa-download"></i> Download
+                                </button>
+                            </div>
+                        </div>
+                    `;
                 }
-
-                showToast('Loading PDF...', 'info');
-                
-                // Try to load PDF
-                const loadingTask = pdfjsLib.getDocument({
-                    url: url,
-                    withCredentials: false,
-                    cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
-                    cMapPacked: true
-                });
-
-                pdfDoc = await loadingTask.promise;
-                
-                totalPages = pdfDoc.numPages;
-                totalPagesSpan.textContent = totalPages;
-                currentPage = 1;
-                currentPageSpan.textContent = currentPage;
-                
-                // Enable controls
-                prevPageBtn.disabled = currentPage <= 1;
-                nextPageBtn.disabled = currentPage >= totalPages;
-                downloadPdfBtn.disabled = false;
-                openInNewTabBtn.disabled = false;
-                
-                // Render first page
-                await renderPage(currentPage);
-                
-                showToast('PDF loaded successfully');
-                
-            } catch (error) {
-                console.error('Error loading PDF:', error);
-                pdfViewer.innerHTML = `
-                    <div class="error-state">
-                        <div style="font-size: 48px; margin-bottom: 16px;">
-                            <i class="fas fa-exclamation-triangle"></i>
-                        </div>
-                        <h3>Cannot Load PDF in Viewer</h3>
-                        <p style="margin: 10px 0; color: #5f6368;">You can still access the PDF by:</p>
-                        <div style="display: flex; gap: 10px; margin: 20px 0; justify-content: center;">
-                            <button class="btn btn-download" onclick="window.open('${url}', '_blank')">
-                                <i class="fas fa-external-link-alt"></i> Open in New Tab
-                            </button>
-                            <button class="btn btn-download" onclick="downloadFileDirect('${url}', '${currentPdfName}')">
-                                <i class="fas fa-download"></i> Download PDF
-                            </button>
-                        </div>
-                    </div>
-                `;
-                showToast('PDF viewer unavailable. Try downloading instead.', 'info');
-            }
-        }
-
-        // Direct download function
-        function downloadFileDirect(url, fileName) {
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = fileName || getFileNameFromUrl(url);
-            link.target = '_blank';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        // Render PDF page
-        async function renderPage(pageNumber) {
-            if (!pdfDoc) return;
-            
-            try {
-                const page = await pdfDoc.getPage(pageNumber);
-                const viewport = page.getViewport({ scale: 1.5 });
-                
-                const canvas = document.createElement('canvas');
-                const context = canvas.getContext('2d');
-                canvas.height = viewport.height;
-                canvas.width = viewport.width;
-                canvas.className = 'pdf-canvas';
-                
-                const renderContext = {
-                    canvasContext: context,
-                    viewport: viewport
-                };
-                
-                await page.render(renderContext).promise;
-                
-                // Clear and add canvas
-                pdfViewer.innerHTML = '';
-                pdfViewer.appendChild(canvas);
-                
-                // Update page info and controls
-                currentPage = pageNumber;
-                currentPageSpan.textContent = currentPage;
-                prevPageBtn.disabled = currentPage <= 1;
-                nextPageBtn.disabled = currentPage >= totalPages;
-                
-            } catch (error) {
-                console.error('Error rendering page:', error);
-                showToast('Error rendering PDF page', 'error');
-            }
+            }, 1000);
         }
 
         // Open image viewer
@@ -1140,68 +1063,36 @@
             imageModalTitle.textContent = name;
             fullImageView.src = url;
             imageModal.style.display = 'flex';
+            
+            // Set download button
+            downloadImageBtn.onclick = () => downloadFile(url, name);
         }
 
-        // Download file with logging
-        async function downloadFile(url, fileName, type = 'file') {
+        // Download file
+        async function downloadFile(url, fileName) {
             try {
-                showToast('Preparing download...', 'info');
+                showToast('Starting download...', 'info');
                 
-                // Log download to statistics
-                await logDownload();
-                
-                // Create download link
                 const link = document.createElement('a');
                 link.href = url;
                 link.download = fileName || getFileNameFromUrl(url);
                 link.target = '_blank';
                 link.rel = 'noopener noreferrer';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
                 
-                showToast('Download started');
+                // For mobile devices
+                if (navigator.userAgent.match(/Android|iPhone|iPad|iPod/i)) {
+                    window.open(url, '_blank');
+                    showToast('File opened in new tab');
+                } else {
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    showToast('Download started');
+                }
                 
             } catch (error) {
                 console.error('Error downloading file:', error);
-                showToast('Error downloading file', 'error');
-            }
-        }
-
-        // Log download to statistics
-        async function logDownload() {
-            try {
-                const timestamp = Date.now();
-                const downloadData = {
-                    timestamp: timestamp,
-                    userAgent: navigator.userAgent,
-                    platform: navigator.platform
-                };
-                
-                // Log to pdf_access_logs
-                await fetch(`${firebaseConfig.databaseURL}/pdf_access_logs/${homeworkId}/downloads/${timestamp}.json`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(downloadData)
-                });
-                
-                // Update download statistics
-                const statsResponse = await fetch(`${firebaseConfig.databaseURL}/pdf_statistics/${homeworkId}/download_count.json`);
-                const currentCount = await statsResponse.json() || 0;
-                
-                await fetch(`${firebaseConfig.databaseURL}/pdf_statistics/${homeworkId}.json`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        download_count: currentCount + 1
-                    })
-                });
-            } catch (error) {
-                console.error('Error logging download:', error);
+                showToast('Error downloading file. Try opening in new tab.', 'error');
             }
         }
 
@@ -1212,36 +1103,6 @@
 
         closeImageModal.addEventListener('click', () => {
             imageModal.style.display = 'none';
-        });
-
-        prevPageBtn.addEventListener('click', () => {
-            if (currentPage > 1) {
-                renderPage(currentPage - 1);
-            }
-        });
-
-        nextPageBtn.addEventListener('click', () => {
-            if (currentPage < totalPages) {
-                renderPage(currentPage + 1);
-            }
-        });
-
-        downloadPdfBtn.addEventListener('click', async () => {
-            if (currentPdfUrl && currentPdfName) {
-                await downloadFile(currentPdfUrl, currentPdfName, 'pdf');
-            }
-        });
-
-        openInNewTabBtn.addEventListener('click', () => {
-            if (currentPdfUrl) {
-                window.open(currentPdfUrl, '_blank');
-            }
-        });
-
-        downloadImageBtn.addEventListener('click', async () => {
-            const url = fullImageView.src;
-            const fileName = getFileNameFromUrl(url);
-            await downloadFile(url, fileName, 'image');
         });
 
         refreshBtn.addEventListener('click', () => {
@@ -1295,9 +1156,6 @@
         // Initialize
         window.addEventListener('DOMContentLoaded', () => {
             loadHomeworkData();
-            
-            // Make downloadFileDirect available globally
-            window.downloadFileDirect = downloadFileDirect;
         });
     </script>
 </body>
