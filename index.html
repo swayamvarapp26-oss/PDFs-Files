@@ -32,6 +32,14 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            overflow-x: hidden;
+            touch-action: pan-y;
+        }
+
+        /* Prevent horizontal scroll */
+        html, body {
+            max-width: 100%;
+            overflow-x: hidden;
         }
 
         /* Eco-friendly header */
@@ -78,6 +86,7 @@
             max-width: 100%;
             overflow-x: hidden;
             padding: 15px;
+            margin-bottom: 80px; /* Space for fixed bottom nav */
         }
 
         /* Cards with eco theme */
@@ -136,6 +145,39 @@
             font-size: 1rem;
             color: var(--eco-text);
             font-weight: 600;
+        }
+
+        /* Upload countdown */
+        .upload-countdown {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px dashed #e0e0e0;
+        }
+
+        .countdown-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .countdown-label {
+            font-size: 0.9rem;
+            color: #5f6368;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .countdown-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--eco-green);
+            background: #e8f5e9;
+            padding: 5px 12px;
+            border-radius: 8px;
+            min-width: 110px;
+            text-align: center;
         }
 
         /* Scrollable galleries */
@@ -345,7 +387,7 @@
         /* Toast */
         .toast {
             position: fixed;
-            bottom: 60px;
+            bottom: 100px;
             left: 20px;
             right: 20px;
             background: var(--eco-accent);
@@ -402,17 +444,21 @@
             opacity: 0.5;
         }
 
-        /* Bottom navigation for mobile */
+        /* Fixed Bottom Navigation - ALWAYS VISIBLE */
         .bottom-nav {
             display: flex;
             justify-content: space-around;
             background: white;
             padding: 15px;
             border-top: 1px solid #e0e0e0;
-            position: sticky;
+            position: fixed;
             bottom: 30px;
+            left: 0;
+            right: 0;
             z-index: 99;
-            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
         }
 
         .nav-item {
@@ -426,18 +472,21 @@
             transition: all 0.3s ease;
             padding: 5px 10px;
             border-radius: 8px;
+            flex: 1;
+            max-width: 80px;
         }
 
         .nav-item.active {
             color: var(--eco-green);
             background: #e8f5e9;
+            transform: translateY(-5px);
         }
 
         .nav-item i {
             font-size: 1.2rem;
         }
 
-        /* Enhanced Image viewer modal with navigation */
+        /* Enhanced Image viewer modal with zoom, drag and rotate */
         .image-modal {
             position: fixed;
             top: 0;
@@ -450,7 +499,8 @@
             justify-content: center;
             z-index: 10000;
             padding: 10px;
-            touch-action: pan-y;
+            touch-action: none;
+            overflow: hidden;
         }
 
         .image-modal-content {
@@ -460,13 +510,64 @@
             align-items: center;
             justify-content: center;
             position: relative;
+            overflow: hidden;
+        }
+
+        .image-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            cursor: grab;
+        }
+
+        .image-container.grabbing {
+            cursor: grabbing;
         }
 
         .image-modal-img {
             max-width: 100%;
             max-height: 85vh;
             object-fit: contain;
-            transition: transform 0.3s ease;
+            transition: transform 0.1s ease-out;
+            transform-origin: center center;
+            user-select: none;
+            -webkit-user-drag: none;
+            touch-action: none;
+        }
+
+        /* Image controls */
+        .image-controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        .image-control-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .image-control-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
         }
 
         .image-modal-close {
@@ -485,6 +586,7 @@
             justify-content: center;
             font-size: 1.5rem;
             z-index: 10;
+            backdrop-filter: blur(5px);
         }
 
         /* Image navigation arrows */
@@ -505,6 +607,7 @@
             font-size: 1.5rem;
             z-index: 10;
             transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
         }
 
         .nav-arrow:hover {
@@ -527,7 +630,7 @@
         /* Image counter */
         .image-counter {
             position: absolute;
-            bottom: 20px;
+            bottom: 80px;
             left: 0;
             right: 0;
             text-align: center;
@@ -540,6 +643,7 @@
             display: inline-block;
             margin: 0 auto;
             width: fit-content;
+            backdrop-filter: blur(5px);
         }
 
         /* Download button in image viewer */
@@ -561,11 +665,97 @@
             z-index: 10;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
         }
 
         .image-download-btn:hover {
             background: var(--eco-light-green);
             transform: scale(1.1);
+        }
+
+        /* Zoom controls */
+        .zoom-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        .zoom-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .zoom-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        /* Reset zoom/rotate button */
+        .reset-btn {
+            position: absolute;
+            bottom: 80px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            z-index: 10;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .reset-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        /* Zoom level indicator */
+        .zoom-level {
+            position: absolute;
+            top: 80px;
+            right: 20px;
+            color: white;
+            font-size: 0.9rem;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            border-radius: 15px;
+            z-index: 10;
+            backdrop-filter: blur(5px);
+        }
+
+        /* Rotate indicator */
+        .rotate-indicator {
+            position: absolute;
+            top: 120px;
+            right: 20px;
+            color: white;
+            font-size: 0.9rem;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            border-radius: 15px;
+            z-index: 10;
+            backdrop-filter: blur(5px);
         }
 
         /* Eco-friendly tips */
@@ -602,6 +792,7 @@
             flex-direction: column;
             overflow-y: auto;
             padding: 15px;
+            margin-bottom: 80px; /* Space for bottom nav */
         }
 
         .gallery-header {
@@ -699,6 +890,7 @@
             flex-direction: column;
             overflow-y: auto;
             padding: 15px;
+            margin-bottom: 80px; /* Space for bottom nav */
         }
 
         .download-header {
@@ -821,7 +1013,7 @@
             50% { transform: translate(-50%, -50%) scale(1.1); }
         }
 
-        /* Countdown timer */
+        /* Countdown timer at bottom */
         .countdown-timer {
             position: fixed;
             bottom: 0;
@@ -835,7 +1027,7 @@
             justify-content: center;
             align-items: center;
             gap: 10px;
-            z-index: 100;
+            z-index: 101;
             box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
         }
 
@@ -853,7 +1045,32 @@
             background: rgba(0, 0, 0, 0.3);
             padding: 2px 8px;
             border-radius: 4px;
-            min-width: 100px;
+            min-width: 120px;
+            text-align: center;
+        }
+
+        /* Deletion countdown (below date) */
+        .deletion-countdown {
+            margin-top: 10px;
+            padding: 10px;
+            background: #fff8e1;
+            border-radius: 8px;
+            border-left: 4px solid #ff9800;
+        }
+
+        .deletion-countdown .label {
+            font-size: 0.8rem;
+            color: #5d4037;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+
+        .deletion-countdown .value {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #e65100;
             text-align: center;
         }
 
@@ -891,22 +1108,50 @@
             transition: width 0.3s ease;
         }
 
-        /* Swipe indicator */
-        .swipe-indicator {
-            position: absolute;
-            bottom: 70px;
-            left: 0;
-            right: 0;
-            text-align: center;
+        /* Swipe to go back indicator */
+        .swipe-back-indicator {
+            position: fixed;
+            top: 50%;
+            left: 10px;
+            transform: translateY(-50%);
             color: rgba(255, 255, 255, 0.7);
-            font-size: 0.8rem;
+            font-size: 1.5rem;
             z-index: 5;
-            animation: fadeInOut 3s infinite;
+            background: rgba(0, 0, 0, 0.5);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
         }
 
-        @keyframes fadeInOut {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 1; }
+        .swipe-back-indicator.show {
+            opacity: 1;
+        }
+
+        /* Pinch zoom indicator */
+        .pinch-indicator {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 0.8rem;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            border-radius: 15px;
+            z-index: 5;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .pinch-indicator.show {
+            opacity: 1;
         }
 
         /* Responsive adjustments */
@@ -950,6 +1195,19 @@
             .nav-arrow-right {
                 right: 10px;
             }
+            
+            .bottom-nav {
+                padding: 12px 10px;
+            }
+            
+            .nav-item {
+                font-size: 0.75rem;
+                padding: 5px 8px;
+            }
+            
+            .nav-item i {
+                font-size: 1rem;
+            }
         }
         
         @media (max-width: 360px) {
@@ -964,11 +1222,26 @@
             .grid-actions {
                 flex-direction: column;
             }
+            
+            .bottom-nav {
+                padding: 10px 5px;
+            }
         }
         
         @media (min-width: 768px) {
             .gallery-grid {
                 grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        /* Orientation change handling */
+        @media (orientation: landscape) {
+            .image-modal-img {
+                max-height: 75vh;
+            }
+            
+            .bottom-nav {
+                padding: 10px;
             }
         }
     </style>
@@ -1024,6 +1297,24 @@
                 <div class="detail-item">
                     <span class="detail-label">PDFs</span>
                     <span class="detail-value" id="pdfsCount">0</span>
+                </div>
+            </div>
+            
+            <!-- Upload Countdown (30 days from upload) -->
+            <div class="upload-countdown">
+                <div class="countdown-item">
+                    <div class="countdown-label">
+                        <i class="fas fa-upload"></i>
+                        <span>Uploaded:</span>
+                    </div>
+                    <div class="countdown-value" id="uploadTimeValue">--:--:--:--</div>
+                </div>
+                <div class="deletion-countdown" id="deletionCountdown" style="display: none;">
+                    <div class="label">
+                        <i class="fas fa-clock"></i>
+                        <span>Time remaining:</span>
+                    </div>
+                    <div class="value" id="deletionCountdownValue">30:00:00:00</div>
                 </div>
             </div>
         </div>
@@ -1115,29 +1406,79 @@
         </div>
     </div>
 
-    <!-- Enhanced Image Viewer Modal with Navigation -->
+    <!-- Enhanced Image Viewer Modal with Zoom, Drag and Rotate -->
     <div class="image-modal" id="imageModal">
         <div class="image-modal-content">
+            <!-- Swipe back indicator -->
+            <div class="swipe-back-indicator" id="swipeBackIndicator">
+                <i class="fas fa-chevron-left"></i>
+            </div>
+            
+            <!-- Pinch zoom indicator -->
+            <div class="pinch-indicator" id="pinchIndicator">
+                Pinch to zoom • Double tap to reset
+            </div>
+            
+            <div class="image-container" id="imageContainer">
+                <img class="image-modal-img" id="imageModalImg" src="" alt="Homework Image">
+            </div>
+            
+            <!-- Image controls -->
+            <div class="image-controls">
+                <button class="image-control-btn" id="rotateLeftBtn" title="Rotate Left">
+                    <i class="fas fa-undo"></i>
+                </button>
+                <button class="image-control-btn" id="rotateRightBtn" title="Rotate Right">
+                    <i class="fas fa-redo"></i>
+                </button>
+            </div>
+            
+            <!-- Zoom controls -->
+            <div class="zoom-controls">
+                <button class="zoom-btn" id="zoomOutBtn" title="Zoom Out">
+                    <i class="fas fa-search-minus"></i>
+                </button>
+                <button class="zoom-btn" id="zoomInBtn" title="Zoom In">
+                    <i class="fas fa-search-plus"></i>
+                </button>
+            </div>
+            
+            <!-- Reset button -->
+            <button class="reset-btn" id="resetImageBtn" title="Reset Zoom & Rotation">
+                <i class="fas fa-sync-alt"></i>
+            </button>
+            
+            <!-- Zoom level indicator -->
+            <div class="zoom-level" id="zoomLevel">
+                100%
+            </div>
+            
+            <!-- Rotate indicator -->
+            <div class="rotate-indicator" id="rotateIndicator">
+                0°
+            </div>
+            
+            <!-- Navigation arrows -->
             <button class="nav-arrow nav-arrow-left" id="prevImageBtn">
                 <i class="fas fa-chevron-left"></i>
             </button>
-            
-            <img class="image-modal-img" id="imageModalImg" src="" alt="Homework Image">
             
             <button class="nav-arrow nav-arrow-right" id="nextImageBtn">
                 <i class="fas fa-chevron-right"></i>
             </button>
             
+            <!-- Close button -->
             <button class="image-modal-close" id="closeImageModal">
                 <i class="fas fa-times"></i>
             </button>
             
+            <!-- Download button -->
             <button class="image-download-btn" id="downloadCurrentImageBtn">
                 <i class="fas fa-download"></i>
             </button>
             
+            <!-- Image counter -->
             <div class="image-counter" id="imageCounter">1 / 1</div>
-            <div class="swipe-indicator">Swipe left/right to navigate</div>
         </div>
     </div>
 
@@ -1175,7 +1516,7 @@
         <span id="toastMessage">Operation completed</span>
     </div>
 
-    <!-- Bottom Navigation -->
+    <!-- Fixed Bottom Navigation - ALWAYS VISIBLE -->
     <div class="bottom-nav">
         <div class="nav-item active" id="navHome">
             <i class="fas fa-home"></i>
@@ -1195,7 +1536,7 @@
         </div>
     </div>
 
-    <!-- Countdown Timer -->
+    <!-- Countdown Timer at Bottom -->
     <div class="countdown-timer" id="countdownTimer">
         <i class="fas fa-clock"></i>
         <span class="countdown-text">Deletion in:</span>
@@ -1232,6 +1573,10 @@
         const dateValue = document.getElementById('dateValue');
         const imagesCount = document.getElementById('imagesCount');
         const pdfsCount = document.getElementById('pdfsCount');
+        const uploadTimeValue = document.getElementById('uploadTimeValue');
+        const deletionCountdown = document.getElementById('deletionCountdown');
+        const deletionCountdownValue = document.getElementById('deletionCountdownValue');
+        
         const imagesSection = document.getElementById('imagesSection');
         const pdfsSection = document.getElementById('pdfsSection');
         const imagesGallery = document.getElementById('imagesGallery');
@@ -1252,11 +1597,23 @@
         // Enhanced Image Modal elements
         const imageModal = document.getElementById('imageModal');
         const imageModalImg = document.getElementById('imageModalImg');
+        const imageContainer = document.getElementById('imageContainer');
         const closeImageModal = document.getElementById('closeImageModal');
         const prevImageBtn = document.getElementById('prevImageBtn');
         const nextImageBtn = document.getElementById('nextImageBtn');
         const downloadCurrentImageBtn = document.getElementById('downloadCurrentImageBtn');
         const imageCounter = document.getElementById('imageCounter');
+        
+        // Image control elements
+        const rotateLeftBtn = document.getElementById('rotateLeftBtn');
+        const rotateRightBtn = document.getElementById('rotateRightBtn');
+        const zoomInBtn = document.getElementById('zoomInBtn');
+        const zoomOutBtn = document.getElementById('zoomOutBtn');
+        const resetImageBtn = document.getElementById('resetImageBtn');
+        const zoomLevel = document.getElementById('zoomLevel');
+        const rotateIndicator = document.getElementById('rotateIndicator');
+        const swipeBackIndicator = document.getElementById('swipeBackIndicator');
+        const pinchIndicator = document.getElementById('pinchIndicator');
         
         // PDF Modal
         const pdfModal = document.getElementById('pdfModal');
@@ -1299,18 +1656,37 @@
         let currentPdfUrl = null;
         let allImages = [];
         let allPDFs = [];
-        let countdownInterval = null;
+        let deletionCountdownInterval = null;
+        let uploadCountdownInterval = null;
         
         // Image viewer navigation variables
         let currentImageIndex = 0;
         let touchStartX = 0;
         let touchEndX = 0;
+        let touchStartY = 0;
+        let touchEndY = 0;
+        let isSwiping = false;
+        let swipeStartX = 0;
+        
+        // Image zoom and transform variables
+        let currentScale = 1;
+        let minScale = 0.5;
+        let maxScale = 5;
+        let currentRotation = 0;
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let translateX = 0;
+        let translateY = 0;
+        let lastTouchDistance = 0;
+        let isPinching = false;
         
         // Track downloaded files
         let downloadedFiles = JSON.parse(localStorage.getItem('downloadedFiles') || '{}');
 
-        // Initialize countdown timer
-        function initCountdownTimer() {
+        // Initialize all countdown timers
+        function initCountdownTimers() {
+            // Bottom countdown timer (from deletion timestamp)
             const deletionTime = deletionTimestamp;
             const now = Date.now();
             
@@ -1321,17 +1697,22 @@
             }
             
             // Update countdown every second
-            countdownInterval = setInterval(updateCountdown, 1000);
-            updateCountdown(); // Initial call
+            deletionCountdownInterval = setInterval(updateDeletionCountdown, 1000);
+            updateDeletionCountdown(); // Initial call
+            
+            // Upload countdown (30 days from upload date)
+            if (homeworkData && homeworkData.createdDate) {
+                startUploadCountdown();
+            }
         }
         
-        function updateCountdown() {
+        function updateDeletionCountdown() {
             const deletionTime = deletionTimestamp;
             const now = Date.now();
             const timeLeft = deletionTime - now;
             
             if (timeLeft <= 0) {
-                clearInterval(countdownInterval);
+                clearInterval(deletionCountdownInterval);
                 countdownValue.textContent = "00:00:00:00";
                 countdownTimer.style.background = "linear-gradient(135deg, #f44336 0%, #d32f2f 100%)";
                 showToast("Homework has been deleted", "error");
@@ -1353,6 +1734,72 @@
                 countdownTimer.style.background = "linear-gradient(135deg, #ff9800 0%, #f57c00 100%)";
             } else if (days < 3) {
                 countdownTimer.style.background = "linear-gradient(135deg, #ffb74d 0%, #ff9800 100%)";
+            }
+        }
+        
+        function startUploadCountdown() {
+            // Parse the upload date (format: DD-MM-YYYY HH:MM:SS)
+            const dateStr = homeworkData.createdDate;
+            const dateParts = dateStr.split(' ')[0].split('-');
+            const timeParts = dateStr.split(' ')[1] ? dateStr.split(' ')[1].split(':') : ['00', '00', '00'];
+            
+            // Create date object (note: months are 0-indexed in JavaScript)
+            const uploadDate = new Date(
+                parseInt(dateParts[2]), // year
+                parseInt(dateParts[1]) - 1, // month (0-indexed)
+                parseInt(dateParts[0]), // day
+                parseInt(timeParts[0]), // hours
+                parseInt(timeParts[1]), // minutes
+                parseInt(timeParts[2])  // seconds
+            );
+            
+            // Add 30 days to upload date
+            const expirationDate = new Date(uploadDate);
+            expirationDate.setDate(expirationDate.getDate() + 30);
+            
+            // Show deletion countdown
+            deletionCountdown.style.display = 'block';
+            
+            // Update every second
+            uploadCountdownInterval = setInterval(() => updateUploadCountdown(expirationDate), 1000);
+            updateUploadCountdown(expirationDate); // Initial call
+        }
+        
+        function updateUploadCountdown(expirationDate) {
+            const now = new Date();
+            const timeLeft = expirationDate - now;
+            
+            if (timeLeft <= 0) {
+                clearInterval(uploadCountdownInterval);
+                deletionCountdownValue.textContent = "EXPIRED";
+                deletionCountdown.style.background = "#ffebee";
+                deletionCountdown.style.borderLeftColor = "#f44336";
+                return;
+            }
+            
+            // Calculate days, hours, minutes, seconds
+            const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+            
+            // Format as DD:HH:MM:SS
+            deletionCountdownValue.textContent = 
+                `${days.toString().padStart(2, '0')}:${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            // Update upload time display
+            uploadTimeValue.textContent = deletionCountdownValue.textContent;
+            
+            // Change color based on remaining time
+            if (days < 7) {
+                deletionCountdown.style.background = "#fff3e0";
+                deletionCountdown.style.borderLeftColor = "#ff9800";
+                deletionCountdownValue.style.color = "#e65100";
+            }
+            if (days < 3) {
+                deletionCountdown.style.background = "#ffebee";
+                deletionCountdown.style.borderLeftColor = "#f44336";
+                deletionCountdownValue.style.color = "#c62828";
             }
         }
 
@@ -1539,11 +1986,260 @@
         // Open image in enhanced viewer with navigation
         function openImage(url, fileName, index = 0) {
             currentImageIndex = index;
+            resetImageTransform(); // Reset zoom and rotation
             updateImageModal();
             imageModal.style.display = 'flex';
             
-            // Add touch event listeners for swipe navigation
-            setupSwipeNavigation();
+            // Add touch event listeners for swipe navigation and zoom
+            setupImageInteraction();
+        }
+
+        // Reset image transform to default
+        function resetImageTransform() {
+            currentScale = 1;
+            currentRotation = 0;
+            translateX = 0;
+            translateY = 0;
+            updateImageTransform();
+        }
+
+        // Update image transform with current scale, rotation and position
+        function updateImageTransform() {
+            const transform = `translate(${translateX}px, ${translateY}px) scale(${currentScale}) rotate(${currentRotation}deg)`;
+            imageModalImg.style.transform = transform;
+            
+            // Update indicators
+            zoomLevel.textContent = `${Math.round(currentScale * 100)}%`;
+            rotateIndicator.textContent = `${currentRotation}°`;
+            
+            // Show pinch indicator briefly
+            showPinchIndicator();
+        }
+
+        // Show pinch indicator
+        function showPinchIndicator() {
+            pinchIndicator.classList.add('show');
+            setTimeout(() => {
+                pinchIndicator.classList.remove('show');
+            }, 2000);
+        }
+
+        // Setup image interaction (zoom, drag, rotate, swipe)
+        function setupImageInteraction() {
+            const img = imageModalImg;
+            const container = imageContainer;
+            
+            // Remove existing listeners
+            container.removeEventListener('touchstart', handleTouchStart);
+            container.removeEventListener('touchmove', handleTouchMove);
+            container.removeEventListener('touchend', handleTouchEnd);
+            container.removeEventListener('mousedown', handleMouseDown);
+            container.removeEventListener('mousemove', handleMouseMove);
+            container.removeEventListener('mouseup', handleMouseUp);
+            container.removeEventListener('mouseleave', handleMouseUp);
+            container.removeEventListener('wheel', handleWheel);
+            img.removeEventListener('dblclick', handleDoubleClick);
+            
+            // Add new listeners
+            container.addEventListener('touchstart', handleTouchStart, { passive: false });
+            container.addEventListener('touchmove', handleTouchMove, { passive: false });
+            container.addEventListener('touchend', handleTouchEnd, { passive: true });
+            container.addEventListener('mousedown', handleMouseDown);
+            container.addEventListener('mousemove', handleMouseMove);
+            container.addEventListener('mouseup', handleMouseUp);
+            container.addEventListener('mouseleave', handleMouseUp);
+            container.addEventListener('wheel', handleWheel, { passive: false });
+            img.addEventListener('dblclick', handleDoubleClick);
+        }
+
+        // Touch event handlers
+        function handleTouchStart(e) {
+            e.preventDefault();
+            
+            if (e.touches.length === 1) {
+                // Single touch for drag and swipe
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+                isSwiping = true;
+                swipeStartX = touchStartX;
+                
+                // Show swipe back indicator if near left edge
+                if (touchStartX < 50) {
+                    swipeBackIndicator.classList.add('show');
+                }
+            } else if (e.touches.length === 2) {
+                // Two touches for pinch zoom
+                isPinching = true;
+                const touch1 = e.touches[0];
+                const touch2 = e.touches[1];
+                lastTouchDistance = Math.sqrt(
+                    Math.pow(touch2.clientX - touch1.clientX, 2) +
+                    Math.pow(touch2.clientY - touch1.clientY, 2)
+                );
+            }
+        }
+
+        function handleTouchMove(e) {
+            e.preventDefault();
+            
+            if (isPinching && e.touches.length === 2) {
+                // Handle pinch zoom
+                const touch1 = e.touches[0];
+                const touch2 = e.touches[1];
+                const currentDistance = Math.sqrt(
+                    Math.pow(touch2.clientX - touch1.clientX, 2) +
+                    Math.pow(touch2.clientY - touch1.clientY, 2)
+                );
+                
+                if (lastTouchDistance > 0) {
+                    const scaleChange = currentDistance / lastTouchDistance;
+                    currentScale *= scaleChange;
+                    currentScale = Math.max(minScale, Math.min(maxScale, currentScale));
+                    updateImageTransform();
+                }
+                
+                lastTouchDistance = currentDistance;
+            } else if (isSwiping && e.touches.length === 1) {
+                // Handle drag and swipe
+                const touchX = e.touches[0].clientX;
+                const touchY = e.touches[0].clientY;
+                
+                if (currentScale > 1) {
+                    // Dragging zoomed image
+                    const deltaX = touchX - touchStartX;
+                    const deltaY = touchY - touchStartY;
+                    
+                    translateX += deltaX;
+                    translateY += deltaY;
+                    
+                    touchStartX = touchX;
+                    touchStartY = touchY;
+                    
+                    updateImageTransform();
+                } else {
+                    // Swiping for navigation
+                    touchEndX = touchX;
+                    touchEndY = touchY;
+                    
+                    // Show swipe back indicator if swiping from left edge
+                    if (swipeStartX < 50 && touchX > swipeStartX + 30) {
+                        swipeBackIndicator.classList.add('show');
+                    }
+                }
+            }
+        }
+
+        function handleTouchEnd(e) {
+            e.preventDefault();
+            
+            if (isSwiping && !isPinching) {
+                // Check for swipe gesture
+                const swipeThreshold = 50;
+                const swipeDistance = touchEndX - touchStartX;
+                
+                if (Math.abs(swipeDistance) > swipeThreshold) {
+                    if (swipeDistance > 0 && swipeStartX < 50) {
+                        // Swipe from left edge to go back
+                        if (fullscreenImageGallery.style.display === 'flex') {
+                            closeFullscreenImageGallery();
+                        } else if (fullscreenPDFGallery.style.display === 'flex') {
+                            closeFullscreenPDFGallery();
+                        } else if (downloadPage.style.display === 'flex') {
+                            closeDownloadPageFunc();
+                        } else if (imageModal.style.display === 'flex') {
+                            closeImageModalFunc();
+                        } else {
+                            // Go to home
+                            navHome.click();
+                        }
+                    } else if (swipeDistance < 0 && currentScale === 1) {
+                        // Swipe left for next image (only when not zoomed)
+                        showNextImage();
+                    } else if (swipeDistance > 0 && currentScale === 1) {
+                        // Swipe right for previous image (only when not zoomed)
+                        showPreviousImage();
+                    }
+                }
+            }
+            
+            // Reset states
+            isSwiping = false;
+            isPinching = false;
+            lastTouchDistance = 0;
+            touchStartX = 0;
+            touchEndX = 0;
+            swipeStartX = 0;
+            swipeBackIndicator.classList.remove('show');
+        }
+
+        // Mouse event handlers
+        function handleMouseDown(e) {
+            e.preventDefault();
+            if (currentScale > 1) {
+                isDragging = true;
+                dragStartX = e.clientX - translateX;
+                dragStartY = e.clientY - translateY;
+                imageContainer.classList.add('grabbing');
+            }
+        }
+
+        function handleMouseMove(e) {
+            if (isDragging) {
+                e.preventDefault();
+                translateX = e.clientX - dragStartX;
+                translateY = e.clientY - dragStartY;
+                updateImageTransform();
+            }
+        }
+
+        function handleMouseUp() {
+            isDragging = false;
+            imageContainer.classList.remove('grabbing');
+        }
+
+        // Wheel for zoom
+        function handleWheel(e) {
+            e.preventDefault();
+            if (e.ctrlKey) {
+                // Pinch zoom simulation with Ctrl+wheel
+                const zoomFactor = 0.1;
+                if (e.deltaY < 0) {
+                    // Zoom in
+                    currentScale = Math.min(maxScale, currentScale + zoomFactor);
+                } else {
+                    // Zoom out
+                    currentScale = Math.max(minScale, currentScale - zoomFactor);
+                }
+                updateImageTransform();
+            }
+        }
+
+        // Double click to reset
+        function handleDoubleClick() {
+            resetImageTransform();
+            showToast("Image reset to default", "info");
+        }
+
+        // Zoom functions
+        function zoomIn() {
+            currentScale = Math.min(maxScale, currentScale + 0.25);
+            updateImageTransform();
+        }
+
+        function zoomOut() {
+            currentScale = Math.max(minScale, currentScale - 0.25);
+            updateImageTransform();
+        }
+
+        // Rotate functions
+        function rotateLeft() {
+            currentRotation -= 90;
+            updateImageTransform();
+        }
+
+        function rotateRight() {
+            currentRotation += 90;
+            updateImageTransform();
         }
 
         // Update image modal with current image
@@ -1553,6 +2249,9 @@
             const currentImage = allImages[currentImageIndex];
             imageModalImg.src = currentImage.url;
             imageModalImg.alt = currentImage.name;
+            
+            // Reset transform when changing images
+            resetImageTransform();
             
             // Update counter
             imageCounter.textContent = `${currentImageIndex + 1} / ${allImages.length}`;
@@ -1578,12 +2277,6 @@
             
             currentImageIndex = (currentImageIndex - 1 + allImages.length) % allImages.length;
             updateImageModal();
-            
-            // Add animation
-            imageModalImg.style.transform = 'translateX(100px)';
-            setTimeout(() => {
-                imageModalImg.style.transform = 'translateX(0)';
-            }, 10);
         }
 
         // Navigate to next image
@@ -1592,53 +2285,6 @@
             
             currentImageIndex = (currentImageIndex + 1) % allImages.length;
             updateImageModal();
-            
-            // Add animation
-            imageModalImg.style.transform = 'translateX(-100px)';
-            setTimeout(() => {
-                imageModalImg.style.transform = 'translateX(0)';
-            }, 10);
-        }
-
-        // Setup swipe navigation for touch devices
-        function setupSwipeNavigation() {
-            const imageContainer = document.querySelector('.image-modal-content');
-            
-            // Remove existing listeners to avoid duplicates
-            imageContainer.removeEventListener('touchstart', handleTouchStart);
-            imageContainer.removeEventListener('touchmove', handleTouchMove);
-            imageContainer.removeEventListener('touchend', handleTouchEnd);
-            
-            // Add new listeners
-            imageContainer.addEventListener('touchstart', handleTouchStart, { passive: true });
-            imageContainer.addEventListener('touchmove', handleTouchMove, { passive: true });
-            imageContainer.addEventListener('touchend', handleTouchEnd, { passive: true });
-        }
-
-        function handleTouchStart(event) {
-            touchStartX = event.changedTouches[0].screenX;
-        }
-
-        function handleTouchMove(event) {
-            touchEndX = event.changedTouches[0].screenX;
-        }
-
-        function handleTouchEnd() {
-            if (touchStartX === 0 || touchEndX === 0) return;
-            
-            const swipeThreshold = 50; // Minimum swipe distance in pixels
-            
-            if (touchStartX - touchEndX > swipeThreshold) {
-                // Swipe left - next image
-                showNextImage();
-            } else if (touchEndX - touchStartX > swipeThreshold) {
-                // Swipe right - previous image
-                showPreviousImage();
-            }
-            
-            // Reset values
-            touchStartX = 0;
-            touchEndX = 0;
         }
 
         // Open PDF in modal
@@ -1754,6 +2400,9 @@
 
             // Load files
             loadFiles();
+            
+            // Initialize countdown timers
+            initCountdownTimers();
         }
 
         // Load files from Firebase
@@ -2076,6 +2725,12 @@
             setActiveNav(navImages);
         }
 
+        // Close fullscreen image gallery
+        function closeFullscreenImageGallery() {
+            fullscreenImageGallery.style.display = 'none';
+            setActiveNav(navHome);
+        }
+
         // Open fullscreen PDF gallery
         function openFullscreenPDFGallery() {
             if (allPDFs.length === 0) {
@@ -2132,6 +2787,12 @@
             // Show the fullscreen gallery
             fullscreenPDFGallery.style.display = 'flex';
             setActiveNav(navPDFs);
+        }
+
+        // Close fullscreen PDF gallery
+        function closeFullscreenPDFGallery() {
+            fullscreenPDFGallery.style.display = 'none';
+            setActiveNav(navHome);
         }
 
         // Open download page
@@ -2219,6 +2880,17 @@
             // Show the download page
             downloadPage.style.display = 'flex';
             setActiveNav(navDownload);
+        }
+
+        // Close download page
+        function closeDownloadPageFunc() {
+            downloadPage.style.display = 'none';
+            setActiveNav(navHome);
+        }
+
+        // Close image modal
+        function closeImageModalFunc() {
+            imageModal.style.display = 'none';
         }
 
         // Download all files
@@ -2324,6 +2996,9 @@
             imagesSection.style.display = 'block';
             pdfsSection.style.display = 'block';
             
+            // Initialize countdown timers
+            initCountdownTimers();
+            
             showToast('Sample homework loaded successfully');
         }
 
@@ -2384,23 +3059,19 @@
             pdfModal.style.display = 'none';
         });
 
-        closeImageModal.addEventListener('click', () => {
-            imageModal.style.display = 'none';
-        });
+        closeImageModal.addEventListener('click', closeImageModalFunc);
+        closeImageGallery.addEventListener('click', closeFullscreenImageGallery);
+        closePDFGallery.addEventListener('click', closeFullscreenPDFGallery);
+        closeDownloadPage.addEventListener('click', closeDownloadPageFunc);
 
-        closeImageGallery.addEventListener('click', () => {
-            fullscreenImageGallery.style.display = 'none';
-            setActiveNav(navHome);
-        });
-
-        closePDFGallery.addEventListener('click', () => {
-            fullscreenPDFGallery.style.display = 'none';
-            setActiveNav(navHome);
-        });
-
-        closeDownloadPage.addEventListener('click', () => {
-            downloadPage.style.display = 'none';
-            setActiveNav(navHome);
+        // Image control buttons
+        rotateLeftBtn.addEventListener('click', rotateLeft);
+        rotateRightBtn.addEventListener('click', rotateRight);
+        zoomInBtn.addEventListener('click', zoomIn);
+        zoomOutBtn.addEventListener('click', zoomOut);
+        resetImageBtn.addEventListener('click', () => {
+            resetImageTransform();
+            showToast("Image reset to default", "info");
         });
 
         // Image navigation buttons
@@ -2415,7 +3086,13 @@
                 } else if (e.key === 'ArrowRight') {
                     showNextImage();
                 } else if (e.key === 'Escape') {
-                    imageModal.style.display = 'none';
+                    closeImageModalFunc();
+                } else if (e.key === '+') {
+                    zoomIn();
+                } else if (e.key === '-') {
+                    zoomOut();
+                } else if (e.key === 'r' || e.key === 'R') {
+                    resetImageTransform();
                 }
             }
             
@@ -2438,7 +3115,15 @@
 
         imageModal.addEventListener('click', (e) => {
             if (e.target === imageModal) {
-                imageModal.style.display = 'none';
+                closeImageModalFunc();
+            }
+        });
+
+        // Handle orientation change
+        window.addEventListener('orientationchange', () => {
+            // Reset image transform on orientation change
+            if (imageModal.style.display === 'flex') {
+                setTimeout(resetImageTransform, 100);
             }
         });
 
@@ -2446,8 +3131,70 @@
         window.addEventListener('DOMContentLoaded', () => {
             loadHomeworkData();
             setupNavigation();
-            initCountdownTimer();
+            initCountdownTimers();
+            
+            // Setup swipe to go back for main content
+            setupSwipeToGoBack();
         });
+
+        // Setup swipe to go back for main content
+        function setupSwipeToGoBack() {
+            let startX = 0;
+            let startY = 0;
+            let isHorizontalSwipe = false;
+            
+            document.addEventListener('touchstart', (e) => {
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+                isHorizontalSwipe = false;
+            }, { passive: true });
+            
+            document.addEventListener('touchmove', (e) => {
+                if (!startX || !startY) return;
+                
+                const diffX = e.touches[0].clientX - startX;
+                const diffY = e.touches[0].clientY - startY;
+                
+                // Determine if it's a horizontal swipe
+                if (Math.abs(diffX) > Math.abs(diffY)) {
+                    isHorizontalSwipe = true;
+                    
+                    // Show swipe back indicator if swiping from left edge
+                    if (startX < 50 && diffX > 30) {
+                        swipeBackIndicator.classList.add('show');
+                    }
+                }
+            }, { passive: true });
+            
+            document.addEventListener('touchend', (e) => {
+                if (!startX || !startY || !isHorizontalSwipe) {
+                    startX = 0;
+                    startY = 0;
+                    swipeBackIndicator.classList.remove('show');
+                    return;
+                }
+                
+                const diffX = e.changedTouches[0].clientX - startX;
+                
+                // If swipe from left edge and moved right significantly
+                if (startX < 50 && diffX > 100) {
+                    // Go back to previous view
+                    if (fullscreenImageGallery.style.display === 'flex') {
+                        closeFullscreenImageGallery();
+                    } else if (fullscreenPDFGallery.style.display === 'flex') {
+                        closeFullscreenPDFGallery();
+                    } else if (downloadPage.style.display === 'flex') {
+                        closeDownloadPageFunc();
+                    } else if (imageModal.style.display === 'flex') {
+                        closeImageModalFunc();
+                    }
+                }
+                
+                startX = 0;
+                startY = 0;
+                swipeBackIndicator.classList.remove('show');
+            }, { passive: true });
+        }
 
         // Make functions available globally
         window.downloadFile = downloadFile;
@@ -2457,6 +3204,11 @@
         window.downloadAllFiles = downloadAllFiles;
         window.showPreviousImage = showPreviousImage;
         window.showNextImage = showNextImage;
+        window.zoomIn = zoomIn;
+        window.zoomOut = zoomOut;
+        window.rotateLeft = rotateLeft;
+        window.rotateRight = rotateRight;
+        window.resetImageTransform = resetImageTransform;
     </script>
 </body>
 </html>
