@@ -3,24 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Real Location Tracker - Live GPS Tracking</title>
+    <title>CyberTracker Pro - Multi-Source Location Intelligence</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- QR Code Library -->
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
     <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #8b5cf6;
+            --danger: #ef4444;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --dark: #1f2937;
+            --light: #f9fafb;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Inter', 'Segoe UI', sans-serif;
         }
 
         body {
-            background: linear-gradient(135deg, #1a237e 0%, #311b92 100%);
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
             min-height: 100vh;
-            color: #333;
+            color: #e2e8f0;
             padding: 20px;
         }
 
@@ -32,28 +40,30 @@
         header {
             text-align: center;
             padding: 25px;
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(30, 41, 59, 0.8);
             border-radius: 20px;
             margin-bottom: 30px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
         }
 
         h1 {
-            color: #1a237e;
+            color: white;
             margin-bottom: 10px;
             font-size: 2.8rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
+            background: linear-gradient(to right, #6366f1, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .subtitle {
-            color: #5c6bc0;
-            font-size: 1.2rem;
+            color: #94a3b8;
+            font-size: 1.1rem;
             max-width: 800px;
             margin: 0 auto;
+            line-height: 1.6;
         }
 
         .main-content {
@@ -69,300 +79,229 @@
         }
 
         .panel {
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(30, 41, 59, 0.8);
             border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 25px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
         }
 
         h2 {
-            color: #1a237e;
+            color: white;
             margin-bottom: 20px;
             padding-bottom: 15px;
-            border-bottom: 3px solid #3949ab;
-            font-size: 1.8rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            border-bottom: 2px solid rgba(99, 102, 241, 0.3);
+            font-size: 1.5rem;
         }
 
         h3 {
-            color: #3949ab;
-            margin: 20px 0 15px;
-            font-size: 1.3rem;
+            color: #cbd5e1;
+            margin: 15px 0 10px;
+            font-size: 1.1rem;
         }
 
-        /* Tracking Methods */
         .tracking-methods {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: 1fr;
             gap: 20px;
-            margin-bottom: 30px;
         }
 
         .method-card {
-            background: linear-gradient(135deg, #3949ab, #5c6bc0);
-            color: white;
-            padding: 25px;
+            background: rgba(15, 23, 42, 0.7);
             border-radius: 15px;
-            cursor: pointer;
+            padding: 20px;
+            border-left: 4px solid var(--primary);
             transition: all 0.3s ease;
-            text-align: center;
-            border: 2px solid transparent;
+            cursor: pointer;
         }
 
         .method-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 30px rgba(57, 73, 171, 0.4);
+            transform: translateY(-3px);
+            background: rgba(15, 23, 42, 0.9);
+            border-left-color: var(--success);
         }
 
         .method-card.active {
-            border-color: #ff4081;
-            background: linear-gradient(135deg, #303f9f, #3949ab);
+            border-left-color: var(--success);
+            background: rgba(15, 23, 42, 0.9);
+        }
+
+        .method-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
         }
 
         .method-icon {
-            font-size: 40px;
-            margin-bottom: 15px;
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
         }
 
+        .ip-icon { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+        .phone-icon { background: linear-gradient(135deg, #10b981, #059669); }
+        .imei-icon { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .link-icon { background: linear-gradient(135deg, #ec4899, #db2777); }
+
         .method-title {
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             font-weight: 600;
-            margin-bottom: 10px;
+            color: white;
         }
 
         .method-desc {
+            color: #94a3b8;
             font-size: 0.9rem;
-            opacity: 0.9;
+            line-height: 1.5;
         }
 
-        /* Input Groups */
         .input-group {
-            margin: 25px 0;
-        }
-
-        .input-with-btn {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
+            margin: 20px 0;
         }
 
         input, select {
-            flex: 1;
-            padding: 16px;
-            border: 2px solid #e8eaf6;
+            width: 100%;
+            padding: 15px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(148, 163, 184, 0.3);
             border-radius: 12px;
+            color: white;
             font-size: 16px;
-            background: #f5f5f5;
             transition: all 0.3s ease;
         }
 
         input:focus, select:focus {
             outline: none;
-            border-color: #3949ab;
-            background: white;
-            box-shadow: 0 0 0 3px rgba(57, 73, 171, 0.2);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
         }
 
-        /* Buttons */
         .btn {
-            padding: 16px 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 15px 25px;
             border: none;
             border-radius: 12px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            min-width: 180px;
+            width: 100%;
+            margin-top: 10px;
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #3949ab, #5c6bc0);
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
             color: white;
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(57, 73, 171, 0.4);
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
         }
 
         .btn-success {
-            background: linear-gradient(135deg, #43a047, #66bb6a);
+            background: linear-gradient(135deg, #10b981, #059669);
             color: white;
         }
 
         .btn-success:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(67, 160, 71, 0.4);
+            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
         }
 
         .btn-danger {
-            background: linear-gradient(135deg, #e53935, #ef5350);
+            background: linear-gradient(135deg, #ef4444, #dc2626);
             color: white;
         }
 
         .btn-danger:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(229, 57, 53, 0.4);
+            box-shadow: 0 10px 20px rgba(239, 68, 68, 0.3);
         }
 
-        .btn-warning {
-            background: linear-gradient(135deg, #fb8c00, #ffa726);
-            color: white;
-        }
-
-        .btn-warning:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(251, 140, 0, 0.4);
-        }
-
-        /* Map */
         #map {
-            height: 500px;
+            height: 400px;
             width: 100%;
             border-radius: 15px;
             margin: 20px 0;
-            border: 3px solid #3949ab;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            z-index: 1;
         }
 
-        /* Location Info */
-        .location-info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
+        .results-panel {
             margin-top: 25px;
         }
 
-        .info-card {
-            background: #f5f5f5;
-            padding: 20px;
-            border-radius: 12px;
-            border-left: 5px solid #3949ab;
-        }
-
-        .info-label {
-            font-size: 0.9rem;
-            color: #666;
-            margin-bottom: 8px;
-        }
-
-        .info-value {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #1a237e;
-        }
-
-        /* Share Link Section */
-        .share-section {
-            background: #e8eaf6;
-            padding: 25px;
+        .result-card {
+            background: rgba(15, 23, 42, 0.7);
             border-radius: 15px;
-            margin-top: 25px;
-            border: 2px dashed #3949ab;
-        }
-
-        .share-link-container {
-            background: white;
             padding: 20px;
-            border-radius: 12px;
-            margin-top: 15px;
-        }
-
-        #shareLink {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #e8eaf6;
-            border-radius: 8px;
-            font-size: 16px;
             margin-bottom: 15px;
-            background: #f9f9f9;
+            border-left: 4px solid var(--primary);
         }
 
-        /* QR Code */
-        .qr-container {
-            text-align: center;
-            padding: 20px;
-            background: white;
-            border-radius: 12px;
-            margin-top: 20px;
-            border: 2px solid #e8eaf6;
-        }
-
-        #qrCode {
-            width: 200px;
-            height: 200px;
-            margin: 0 auto;
-            background: white;
-            padding: 10px;
-            border-radius: 8px;
-        }
-
-        /* Tracking History */
-        .history-list {
-            max-height: 300px;
-            overflow-y: auto;
-            margin-top: 20px;
-            background: #f5f5f5;
-            border-radius: 12px;
-            padding: 15px;
-        }
-
-        .history-item {
+        .result-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 15px;
-            background: white;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            border-left: 4px solid #3949ab;
-            cursor: pointer;
-            transition: all 0.3s ease;
+            margin-bottom: 15px;
         }
 
-        .history-item:hover {
-            transform: translateX(5px);
-            background: #e8eaf6;
+        .result-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: white;
         }
 
-        /* Status Indicators */
-        .status-indicator {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
+        .result-badge {
+            padding: 5px 12px;
             border-radius: 20px;
-            font-size: 14px;
+            font-size: 0.8rem;
             font-weight: 600;
         }
 
-        .status-online {
-            background: #e8f5e9;
-            color: #43a047;
+        .badge-success { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+        .badge-warning { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+        .badge-danger { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
         }
 
-        .status-offline {
-            background: #ffebee;
-            color: #e53935;
+        .info-item {
+            background: rgba(30, 41, 59, 0.5);
+            padding: 12px;
+            border-radius: 10px;
         }
 
-        .status-tracking {
-            background: #e3f2fd;
-            color: #3949ab;
+        .info-label {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-bottom: 5px;
         }
 
-        /* Loading Animation */
+        .info-value {
+            font-size: 1rem;
+            color: white;
+            font-weight: 500;
+        }
+
         .loading {
             display: none;
             text-align: center;
-            padding: 40px;
+            padding: 30px;
         }
 
         .loading.active {
@@ -370,11 +309,11 @@
         }
 
         .spinner {
-            width: 60px;
-            height: 60px;
-            border: 4px solid #e8eaf6;
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(99, 102, 241, 0.3);
             border-radius: 50%;
-            border-top-color: #3949ab;
+            border-top-color: var(--primary);
             animation: spin 1s ease-in-out infinite;
             margin: 0 auto 20px;
         }
@@ -383,27 +322,26 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Tabs */
         .tabs {
             display: flex;
             gap: 10px;
-            margin-bottom: 25px;
-            border-bottom: 3px solid #e8eaf6;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.2);
             padding-bottom: 10px;
         }
 
         .tab {
-            padding: 12px 25px;
-            background: #f5f5f5;
-            border-radius: 8px;
+            padding: 10px 20px;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 10px;
             cursor: pointer;
-            font-weight: 600;
-            color: #666;
             transition: all 0.3s ease;
+            color: #94a3b8;
+            font-weight: 500;
         }
 
         .tab.active {
-            background: #3949ab;
+            background: rgba(99, 102, 241, 0.2);
             color: white;
         }
 
@@ -415,20 +353,94 @@
             display: block;
         }
 
-        /* Notification */
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(15, 23, 42, 0.7);
+            border-radius: 12px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .history-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .history-item:hover {
+            background: rgba(15, 23, 42, 0.7);
+        }
+
+        .history-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .history-time {
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: #64748b;
+            font-size: 0.9rem;
+            border-top: 1px solid rgba(148, 163, 184, 0.2);
+        }
+
+        .disclaimer {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 12px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #fca5a5;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
         .notification {
             position: fixed;
             top: 20px;
             right: 20px;
-            padding: 20px;
-            background: white;
+            padding: 15px 20px;
+            background: var(--dark);
             border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            border-left: 4px solid var(--success);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
             transform: translateX(150%);
             transition: transform 0.3s ease;
             z-index: 1000;
-            max-width: 400px;
-            border-left: 5px solid #3949ab;
+            max-width: 350px;
         }
 
         .notification.show {
@@ -436,295 +448,294 @@
         }
 
         .notification-title {
+            color: white;
             font-weight: 600;
-            color: #1a237e;
-            margin-bottom: 8px;
+            margin-bottom: 5px;
         }
 
         .notification-message {
-            color: #666;
-            font-size: 14px;
+            color: #94a3b8;
+            font-size: 0.9rem;
         }
 
-        /* Footer */
-        footer {
-            text-align: center;
-            margin-top: 40px;
-            padding: 25px;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            color: #5c6bc0;
+        .accuracy-meter {
+            width: 100%;
+            height: 8px;
+            background: rgba(148, 163, 184, 0.2);
+            border-radius: 4px;
+            margin: 10px 0;
+            overflow: hidden;
         }
 
-        .disclaimer {
-            background: #ffebee;
-            border: 2px solid #ef5350;
-            border-radius: 12px;
-            padding: 20px;
-            margin: 20px 0;
-            color: #c62828;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .tracking-methods {
-                grid-template-columns: 1fr;
-            }
-            
-            .input-with-btn {
-                flex-direction: column;
-            }
-            
-            h1 {
-                font-size: 2rem;
-                flex-direction: column;
-            }
+        .accuracy-fill {
+            height: 100%;
+            background: linear-gradient(to right, #ef4444, #f59e0b, #10b981);
+            border-radius: 4px;
+            width: 75%;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>
-                <i class="fas fa-satellite-dish"></i>
-                Real Location Tracker
-                <span class="status-indicator status-tracking">
-                    <i class="fas fa-circle"></i> LIVE
-                </span>
-            </h1>
-            <p class="subtitle">Real-time GPS tracking with live location sharing - Works on all devices</p>
+            <h1><i class="fas fa-satellite-dish"></i> CyberTracker Pro</h1>
+            <p class="subtitle">Advanced multi-source location intelligence platform with IP, Phone Number, and IMEI tracking capabilities</p>
         </header>
 
         <div class="disclaimer">
-            <i class="fas fa-exclamation-triangle"></i>
-            <strong>Important:</strong> This is a real tracking system. Only track people who have given you permission.
-            Location sharing requires explicit consent from the person being tracked.
+            <i class="fas fa-exclamation-triangle"></i> <strong>Legal Disclaimer:</strong> This is a demonstration tool for educational purposes only. Real IP, phone number, and IMEI tracking require legal authorization and access to official databases. Always comply with privacy laws and regulations.
         </div>
 
         <div class="main-content">
-            <!-- Left Panel -->
             <div class="panel">
-                <h2><i class="fas fa-cogs"></i> Tracking Controls</h2>
+                <h2>Tracking Methods</h2>
                 
                 <div class="tabs">
-                    <div class="tab active" data-tab="track">Track Someone</div>
-                    <div class="tab" data-tab="share">Share My Location</div>
-                    <div class="tab" data-tab="history">History</div>
+                    <div class="tab active" data-tab="track">Track Target</div>
+                    <div class="tab" data-tab="history">Tracking History</div>
                 </div>
 
-                <!-- Track Tab -->
                 <div class="tab-content active" id="trackTab">
-                    <h3>Choose Tracking Method</h3>
                     <div class="tracking-methods">
-                        <div class="method-card active" data-method="share-link">
-                            <div class="method-icon">
-                                <i class="fas fa-share-alt"></i>
+                        <div class="method-card active" data-method="ip">
+                            <div class="method-header">
+                                <div class="method-icon ip-icon">
+                                    <i class="fas fa-network-wired"></i>
+                                </div>
+                                <div>
+                                    <div class="method-title">IP Address Tracking</div>
+                                    <div class="method-desc">Track location by IP address with ISP and network details</div>
+                                </div>
                             </div>
-                            <div class="method-title">Share Link</div>
-                            <div class="method-desc">Get a shareable link for real-time tracking</div>
                         </div>
-                        
+
                         <div class="method-card" data-method="phone">
-                            <div class="method-icon">
-                                <i class="fas fa-phone"></i>
+                            <div class="method-header">
+                                <div class="method-icon phone-icon">
+                                    <i class="fas fa-phone-alt"></i>
+                                </div>
+                                <div>
+                                    <div class="method-title">Phone Number Tracking</div>
+                                    <div class="method-desc">Locate phone by number with carrier and SIM information</div>
+                                </div>
                             </div>
-                            <div class="method-title">Phone Request</div>
-                            <div class="method-desc">Send location request via SMS/WhatsApp</div>
                         </div>
-                        
-                        <div class="method-card" data-method="qr">
-                            <div class="method-icon">
-                                <i class="fas fa-qrcode"></i>
+
+                        <div class="method-card" data-method="imei">
+                            <div class="method-header">
+                                <div class="method-icon imei-icon">
+                                    <i class="fas fa-mobile-alt"></i>
+                                </div>
+                                <div>
+                                    <div class="method-title">IMEI/Device Tracking</div>
+                                    <div class="method-desc">Track device by IMEI number with manufacturer details</div>
+                                </div>
                             </div>
-                            <div class="method-title">QR Code</div>
-                            <div class="method-desc">Generate QR code for easy sharing</div>
+                        </div>
+
+                        <div class="method-card" data-method="link">
+                            <div class="method-header">
+                                <div class="method-icon link-icon">
+                                    <i class="fas fa-link"></i>
+                                </div>
+                                <div>
+                                    <div class="method-title">Share & Track Link</div>
+                                    <div class="method-desc">Generate tracking link for real-time location sharing</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <div class="input-group">
-                        <h3>Generate Tracking Link</h3>
-                        <div class="input-with-btn">
-                            <input type="text" id="trackingName" placeholder="Enter name for tracking session" value="Family Tracker">
-                            <button class="btn btn-primary" id="generateLinkBtn">
-                                <i class="fas fa-link"></i> Generate Link
-                            </button>
+                        <div id="ipInput" class="method-input">
+                            <h3>Enter IP Address</h3>
+                            <input type="text" id="ipAddress" placeholder="e.g., 192.168.1.1 or 8.8.8.8" value="8.8.8.8">
                         </div>
-                        
-                        <div class="share-link-container" id="linkContainer" style="display: none;">
-                            <h4>Share this link:</h4>
-                            <input type="text" id="shareLink" readonly>
-                            <div style="display: flex; gap: 10px; margin-top: 15px;">
-                                <button class="btn btn-success" id="copyLinkBtn">
+
+                        <div id="phoneInput" class="method-input" style="display: none;">
+                            <h3>Enter Phone Number</h3>
+                            <div style="display: flex; gap: 10px;">
+                                <select id="countryCode" style="width: 120px;">
+                                    <option value="+1">+1 (US)</option>
+                                    <option value="+44">+44 (UK)</option>
+                                    <option value="+91">+91 (IN)</option>
+                                    <option value="+86">+86 (CN)</option>
+                                    <option value="+49">+49 (DE)</option>
+                                </select>
+                                <input type="text" id="phoneNumber" placeholder="Enter phone number" value="5551234567">
+                            </div>
+                        </div>
+
+                        <div id="imeiInput" class="method-input" style="display: none;">
+                            <h3>Enter IMEI Number</h3>
+                            <input type="text" id="imeiNumber" placeholder="15-digit IMEI number" value="490154203237518">
+                        </div>
+
+                        <div id="linkInput" class="method-input" style="display: none;">
+                            <h3>Generate Tracking Link</h3>
+                            <button class="btn btn-primary" id="generateLinkBtn">
+                                <i class="fas fa-link"></i> Generate Secure Tracking Link
+                            </button>
+                            <div id="linkOutput" style="display: none; margin-top: 15px;">
+                                <input type="text" id="shareLink" readonly>
+                                <button class="btn btn-success" id="copyLinkBtn" style="margin-top: 10px;">
                                     <i class="fas fa-copy"></i> Copy Link
                                 </button>
-                                <button class="btn btn-warning" id="sendSMSBtn">
-                                    <i class="fas fa-sms"></i> Send SMS
-                                </button>
-                                <button class="btn btn-primary" id="testLinkBtn">
-                                    <i class="fas fa-external-link-alt"></i> Test
-                                </button>
-                            </div>
-                            
-                            <div class="qr-container">
-                                <h4>Scan QR Code:</h4>
-                                <div id="qrCode"></div>
-                                <p style="color: #666; margin-top: 10px; font-size: 14px;">
-                                    Scan with phone camera to open tracking link
-                                </p>
                             </div>
                         </div>
+
+                        <button class="btn btn-primary" id="trackButton">
+                            <i class="fas fa-search-location"></i> Start Tracking
+                        </button>
                     </div>
 
                     <div class="connection-status">
-                        <div class="status-indicator status-online">
-                            <i class="fas fa-wifi"></i> System Online
-                        </div>
-                        <p style="color: #666; margin-top: 10px; font-size: 14px;">
-                            <i class="fas fa-info-circle"></i>
-                            When someone opens your link, their location will appear here automatically
-                        </p>
+                        <div class="status-indicator"></div>
+                        <span>System Connected - Ready for Tracking</span>
                     </div>
                 </div>
 
-                <!-- Share Tab -->
-                <div class="tab-content" id="shareTab">
-                    <h3><i class="fas fa-location-arrow"></i> Share Your Location</h3>
-                    <p style="color: #666; margin-bottom: 20px;">
-                        Share your current location with someone. They'll see your live position on the map.
-                    </p>
-                    
-                    <button class="btn btn-primary btn-lg" id="shareMyLocationBtn" style="width: 100%; padding: 20px; font-size: 18px;">
-                        <i class="fas fa-location-crosshairs"></i> Share My Live Location
-                    </button>
-                    
-                    <div class="share-info" id="shareInfo" style="display: none; margin-top: 25px;">
-                        <div class="info-card">
-                            <div class="info-label">Sharing Status</div>
-                            <div class="info-value">
-                                <span class="status-indicator status-tracking">
-                                    <i class="fas fa-circle"></i> LIVE SHARING ACTIVE
-                                </span>
-                            </div>
-                        </div>
-                        
-                        <div class="location-info-grid">
-                            <div class="info-card">
-                                <div class="info-label">Latitude</div>
-                                <div class="info-value" id="myLat">--</div>
-                            </div>
-                            <div class="info-card">
-                                <div class="info-label">Longitude</div>
-                                <div class="info-value" id="myLng">--</div>
-                            </div>
-                            <div class="info-card">
-                                <div class="info-label">Accuracy</div>
-                                <div class="info-value" id="myAccuracy">--</div>
-                            </div>
-                            <div class="info-card">
-                                <div class="info-label">Last Update</div>
-                                <div class="info-value" id="myLastUpdate">--</div>
-                            </div>
-                        </div>
-                        
-                        <button class="btn btn-danger" id="stopSharingBtn" style="margin-top: 20px;">
-                            <i class="fas fa-stop"></i> Stop Sharing
-                        </button>
-                    </div>
-                </div>
-
-                <!-- History Tab -->
                 <div class="tab-content" id="historyTab">
-                    <h3><i class="fas fa-history"></i> Tracking History</h3>
+                    <h3>Recent Tracking Sessions</h3>
                     <div class="history-list" id="trackingHistory">
-                        <!-- History items will appear here -->
+                        <!-- History items will be added here -->
                     </div>
-                    <button class="btn btn-danger" id="clearHistoryBtn" style="margin-top: 20px;">
+                    <button class="btn btn-danger" id="clearHistoryBtn" style="margin-top: 15px;">
                         <i class="fas fa-trash"></i> Clear History
                     </button>
                 </div>
             </div>
 
-            <!-- Right Panel -->
             <div class="panel">
-                <h2><i class="fas fa-map-marked-alt"></i> Live Tracking Map</h2>
+                <h2>Tracking Results</h2>
                 
                 <div class="loading" id="loading">
                     <div class="spinner"></div>
-                    <p>Waiting for location data...</p>
-                    <p style="color: #666; margin-top: 10px;">Share a link to start tracking</p>
+                    <p>Tracking target location...</p>
+                    <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 10px;">Analyzing data from multiple sources</p>
                 </div>
 
-                <div id="mapContainer">
+                <div id="results">
                     <div id="map"></div>
                     
-                    <div class="tracking-info" id="trackingInfo" style="display: none; margin-top: 25px;">
-                        <h3><i class="fas fa-user-circle"></i> Active Tracking Sessions</h3>
-                        
-                        <div class="tracked-users" id="trackedUsers">
-                            <!-- Tracked users will appear here -->
+                    <div class="results-panel">
+                        <div class="result-card">
+                            <div class="result-header">
+                                <div class="result-title">Location Intelligence</div>
+                                <div class="result-badge badge-success">LIVE</div>
+                            </div>
+                            
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <div class="info-label">Current Location</div>
+                                    <div class="info-value" id="currentLocation">Loading...</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Last Known Location</div>
+                                    <div class="info-value" id="lastLocation">Loading...</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Tracking Accuracy</div>
+                                    <div class="info-value">
+                                        <div class="accuracy-meter">
+                                            <div class="accuracy-fill" id="accuracyFill"></div>
+                                        </div>
+                                        <span id="accuracyValue">75%</span>
+                                    </div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Status</div>
+                                    <div class="info-value" id="trackingStatus">Active</div>
+                                </div>
+                            </div>
                         </div>
-                        
-                        <div class="location-info-grid">
-                            <div class="info-card">
-                                <div class="info-label">Active Sessions</div>
-                                <div class="info-value" id="activeSessions">0</div>
+
+                        <div class="result-card" id="targetDetails">
+                            <div class="result-header">
+                                <div class="result-title">Target Details</div>
+                                <div class="result-badge badge-warning">ENCRYPTED</div>
                             </div>
-                            <div class="info-card">
-                                <div class="info-label">Last Update</div>
-                                <div class="info-value" id="lastUpdateTime">--</div>
-                            </div>
-                            <div class="info-card">
-                                <div class="info-label">Map Accuracy</div>
-                                <div class="info-value">High</div>
-                            </div>
-                            <div class="info-card">
-                                <div class="info-label">Tracking Mode</div>
-                                <div class="info-value">Live GPS</div>
+                            
+                            <div class="info-grid" id="targetInfo">
+                                <!-- Target details will be populated here -->
                             </div>
                         </div>
-                        
-                        <div style="display: flex; gap: 15px; margin-top: 25px;">
-                            <button class="btn btn-success" id="startLiveTrackingBtn">
-                                <i class="fas fa-play-circle"></i> Start Live Updates
-                            </button>
-                            <button class="btn btn-danger" id="stopAllTrackingBtn">
-                                <i class="fas fa-stop-circle"></i> Stop All
-                            </button>
-                            <button class="btn btn-primary" id="exportDataBtn">
-                                <i class="fas fa-download"></i> Export Data
-                            </button>
+
+                        <div class="result-card" id="carrierDetails">
+                            <div class="result-header">
+                                <div class="result-title">Carrier & Network Info</div>
+                                <div class="result-badge badge-success">VERIFIED</div>
+                            </div>
+                            
+                            <div class="info-grid" id="carrierInfo">
+                                <!-- Carrier info will be populated here -->
+                            </div>
                         </div>
+
+                        <div class="result-card" id="deviceDetails">
+                            <div class="result-header">
+                                <div class="result-title">Device Information</div>
+                                <div class="result-badge badge-warning">PARTIAL</div>
+                            </div>
+                            
+                            <div class="info-grid" id="deviceInfo">
+                                <!-- Device info will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tracking-controls" style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button class="btn btn-success" id="startLiveBtn">
+                            <i class="fas fa-play-circle"></i> Start Live Tracking
+                        </button>
+                        <button class="btn btn-danger" id="stopLiveBtn" style="display: none;">
+                            <i class="fas fa-stop-circle"></i> Stop Live Tracking
+                        </button>
+                        <button class="btn btn-primary" id="exportDataBtn">
+                            <i class="fas fa-download"></i> Export Data
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
 
         <footer>
-            <p><i class="fas fa-shield-alt"></i> Real Location Tracker v3.0 • End-to-End Encrypted • GDPR Compliant</p>
-            <p style="font-size: 14px; margin-top: 10px;">
-                Works on all modern browsers with GPS support. No app installation required.
+            <p><i class="fas fa-shield-alt"></i> CyberTracker Pro v2.1 • Advanced Location Intelligence Platform</p>
+            <p style="font-size: 0.8rem; margin-top: 5px; color: #475569;">
+                For authorized use only. All tracking activities are logged and monitored.
             </p>
         </footer>
     </div>
 
     <div class="notification" id="notification">
         <div class="notification-title" id="notifTitle">Notification</div>
-        <div class="notification-message" id="notifMessage">Message content here</div>
+        <div class="notification-message" id="notifMessage">This is a notification message</div>
     </div>
 
     <script>
-        // REAL TRACKING SYSTEM
+        // Initialize variables
         let map;
-        let markers = {};
-        let watchId = null;
-        let isSharing = false;
-        let isTracking = false;
-        let trackingSessions = {};
+        let marker;
+        let liveTracking = false;
+        let trackingInterval;
+        let currentMethod = 'ip';
         let trackingHistory = JSON.parse(localStorage.getItem('trackingHistory')) || [];
-        let currentSessionId = null;
-        let liveTrackingInterval = null;
+        let simulatedTargets = {
+            ip: {
+                '8.8.8.8': { lat: 37.4056, lng: -122.0775, city: 'Mountain View', country: 'United States', isp: 'Google LLC', accuracy: 85 },
+                '1.1.1.1': { lat: -33.8688, lng: 151.2093, city: 'Sydney', country: 'Australia', isp: 'Cloudflare', accuracy: 90 },
+                '216.58.214.174': { lat: 37.4192, lng: -122.0574, city: 'Menlo Park', country: 'United States', isp: 'Google', accuracy: 80 }
+            },
+            phone: {
+                '+15551234567': { lat: 40.7128, lng: -74.0060, city: 'New York', country: 'United States', carrier: 'Verizon', accuracy: 70 },
+                '+441234567890': { lat: 51.5074, lng: -0.1278, city: 'London', country: 'United Kingdom', carrier: 'Vodafone', accuracy: 75 },
+                '+911234567890': { lat: 28.6139, lng: 77.2090, city: 'New Delhi', country: 'India', carrier: 'Airtel', accuracy: 65 }
+            },
+            imei: {
+                '490154203237518': { lat: 37.3349, lng: -122.0090, city: 'Cupertino', country: 'United States', device: 'iPhone 13 Pro', accuracy: 95 },
+                '358879070123456': { lat: 37.4232, lng: -122.0871, city: 'Palo Alto', country: 'United States', device: 'Samsung Galaxy S22', accuracy: 90 }
+            }
+        };
 
         // Initialize map
         function initMap(lat = 20, lng = 0, zoom = 2) {
@@ -732,393 +743,467 @@
                 map = L.map('map').setView([lat, lng], zoom);
                 
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© OpenStreetMap contributors',
-                    maxZoom: 19
+                    attribution: '© OpenStreetMap contributors'
                 }).addTo(map);
-                
-                // Add scale
-                L.control.scale({imperial: false}).addTo(map);
             }
+            
             return map;
         }
 
         // Show notification
         function showNotification(title, message, type = 'info') {
             const notification = document.getElementById('notification');
-            const colors = {
-                success: '#43a047',
-                error: '#e53935',
-                warning: '#fb8c00',
-                info: '#3949ab'
-            };
-            
             document.getElementById('notifTitle').textContent = title;
             document.getElementById('notifMessage').textContent = message;
+            
+            // Set color based on type
+            const colors = {
+                success: '#10b981',
+                error: '#ef4444',
+                warning: '#f59e0b',
+                info: '#6366f1'
+            };
+            
             notification.style.borderLeftColor = colors[type] || colors.info;
             notification.classList.add('show');
             
-            setTimeout(() => notification.classList.remove('show'), 4000);
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
         }
 
-        // Generate session ID
-        function generateSessionId() {
-            return 'session_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
-        }
-
-        // Generate tracking link
-        function generateTrackingLink() {
-            const name = document.getElementById('trackingName').value.trim() || 'Location Tracker';
-            currentSessionId = generateSessionId();
-            
-            // Create tracking link
-            const link = `${window.location.origin}${window.location.pathname}?track=${currentSessionId}&name=${encodeURIComponent(name)}`;
-            
-            // Display link
-            document.getElementById('shareLink').value = link;
-            document.getElementById('linkContainer').style.display = 'block';
-            
-            // Generate QR code
-            const qrCodeDiv = document.getElementById('qrCode');
-            qrCodeDiv.innerHTML = '';
-            QRCode.toCanvas(qrCodeDiv, link, {
-                width: 180,
-                height: 180,
-                margin: 1,
-                color: {
-                    dark: '#1a237e',
-                    light: '#ffffff'
-                }
-            });
-            
-            // Store session
-            trackingSessions[currentSessionId] = {
-                id: currentSessionId,
-                name: name,
-                createdAt: new Date(),
-                status: 'waiting'
-            };
-            
-            showNotification('Link Generated', `Share this link to track ${name}`, 'success');
-            updateTrackingInfo();
-            
-            return link;
-        }
-
-        // Copy link to clipboard
-        function copyLink() {
-            const link = document.getElementById('shareLink').value;
-            navigator.clipboard.writeText(link).then(() => {
-                showNotification('Copied!', 'Link copied to clipboard', 'success');
-            });
-        }
-
-        // Send SMS (simulated)
-        function sendSMS() {
-            const link = document.getElementById('shareLink').value;
-            const message = `Click to share your location: ${link}`;
-            
-            if (navigator.share) {
-                navigator.share({
-                    title: 'Share Your Location',
-                    text: 'Please share your location by clicking this link:',
-                    url: link
-                }).then(() => {
-                    showNotification('Shared!', 'Link shared successfully', 'success');
-                });
+        // Update location on map
+        function updateLocationOnMap(lat, lng, popupText) {
+            if (!map) {
+                initMap(lat, lng, 13);
             } else {
-                showNotification('SMS Ready', 'Copy the link and send it via SMS/WhatsApp', 'info');
-            }
-        }
-
-        // Start sharing your location
-        function startSharingLocation() {
-            if (isSharing) return;
-            
-            if (!navigator.geolocation) {
-                showNotification('Error', 'Geolocation not supported by your browser', 'error');
-                return;
+                map.setView([lat, lng], 13);
             }
             
-            showNotification('Requesting Access', 'Please allow location access in your browser', 'info');
-            
-            // Get current position first
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const { latitude, longitude, accuracy } = position.coords;
-                    
-                    // Show sharing info
-                    document.getElementById('shareInfo').style.display = 'block';
-                    document.getElementById('myLat').textContent = latitude.toFixed(6);
-                    document.getElementById('myLng').textContent = longitude.toFixed(6);
-                    document.getElementById('myAccuracy').textContent = `${Math.round(accuracy)} meters`;
-                    document.getElementById('myLastUpdate').textContent = new Date().toLocaleTimeString();
-                    
-                    // Start watching position
-                    watchId = navigator.geolocation.watchPosition(
-                        (pos) => {
-                            const { latitude, longitude, accuracy } = pos.coords;
-                            
-                            // Update display
-                            document.getElementById('myLat').textContent = latitude.toFixed(6);
-                            document.getElementById('myLng').textContent = longitude.toFixed(6);
-                            document.getElementById('myAccuracy').textContent = `${Math.round(accuracy)} meters`;
-                            document.getElementById('myLastUpdate').textContent = new Date().toLocaleTimeString();
-                            
-                            // If tracking session exists, update it
-                            if (currentSessionId) {
-                                updateTrackedLocation(currentSessionId, latitude, longitude, accuracy);
-                            }
-                            
-                            showNotification('Location Updated', 'Your location has been updated', 'success');
-                        },
-                        (error) => {
-                            console.error('Error watching position:', error);
-                            showNotification('Error', 'Failed to update location', 'error');
-                        },
-                        {
-                            enableHighAccuracy: true,
-                            maximumAge: 10000,
-                            timeout: 5000
-                        }
-                    );
-                    
-                    isSharing = true;
-                    showNotification('Sharing Active', 'Your location is now being shared', 'success');
-                },
-                (error) => {
-                    console.error('Error getting location:', error);
-                    showNotification('Permission Denied', 'Location access is required for sharing', 'error');
-                },
-                {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 0
-                }
-            );
-        }
-
-        // Stop sharing location
-        function stopSharing() {
-            if (watchId) {
-                navigator.geolocation.clearWatch(watchId);
-                watchId = null;
+            // Remove previous marker
+            if (marker) {
+                map.removeLayer(marker);
             }
             
-            isSharing = false;
-            document.getElementById('shareInfo').style.display = 'none';
-            showNotification('Sharing Stopped', 'Location sharing has been stopped', 'warning');
-        }
-
-        // Update tracked location on map
-        function updateTrackedLocation(sessionId, lat, lng, accuracy = 50) {
-            const session = trackingSessions[sessionId];
-            if (!session) return;
-            
-            // Update session data
-            session.lastUpdate = new Date();
-            session.lat = lat;
-            session.lng = lng;
-            session.accuracy = accuracy;
-            session.status = 'active';
-            
-            // Update or create marker
-            if (markers[sessionId]) {
-                markers[sessionId].setLatLng([lat, lng]);
-            } else {
-                // Create custom icon
-                const icon = L.divIcon({
-                    html: `<div style="background: #3949ab; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.3);">
-                        <i class="fas fa-user"></i>
-                    </div>`,
-                    className: 'custom-marker',
-                    iconSize: [40, 40],
-                    iconAnchor: [20, 20]
-                });
-                
-                markers[sessionId] = L.marker([lat, lng], { icon })
-                    .addTo(map)
-                    .bindPopup(`
-                        <b>${session.name}</b><br>
-                        Last update: ${session.lastUpdate.toLocaleTimeString()}<br>
-                        Accuracy: ${Math.round(accuracy)}m
-                    `);
-            }
+            // Add new marker
+            marker = L.marker([lat, lng]).addTo(map)
+                .bindPopup(popupText)
+                .openPopup();
             
             // Add accuracy circle
-            if (session.accuracyCircle) {
-                map.removeLayer(session.accuracyCircle);
-            }
-            
-            session.accuracyCircle = L.circle([lat, lng], {
-                color: '#3949ab',
-                fillColor: '#3949ab',
+            L.circle([lat, lng], {
+                color: '#6366f1',
+                fillColor: '#6366f1',
                 fillOpacity: 0.1,
-                radius: accuracy
+                radius: 5000 // 5km radius for demo
             }).addTo(map);
+        }
+
+        // Simulate tracking based on method
+        function simulateTracking(method, value) {
+            const targets = simulatedTargets[method];
+            let result;
             
-            // Center map on this location if it's the only one
-            if (Object.keys(markers).length === 1) {
-                map.setView([lat, lng], 15);
+            if (targets && targets[value]) {
+                result = targets[value];
             } else {
-                // Fit bounds to show all markers
-                const markerBounds = L.latLngBounds(Object.values(markers).map(m => m.getLatLng()));
-                map.fitBounds(markerBounds.pad(0.1));
+                // Generate random location if not in simulated data
+                const lat = 20 + (Math.random() * 50 - 25);
+                const lng = 20 + (Math.random() * 100 - 50);
+                const cities = ['New York', 'London', 'Tokyo', 'Paris', 'Dubai', 'Sydney', 'Singapore'];
+                const countries = ['United States', 'United Kingdom', 'Japan', 'France', 'UAE', 'Australia', 'Singapore'];
+                const isps = ['AT&T', 'Verizon', 'Comcast', 'Google', 'Amazon AWS'];
+                const carriers = ['Verizon', 'AT&T', 'T-Mobile', 'Vodafone', 'Airtel', 'Jio'];
+                const devices = ['iPhone 14 Pro', 'Samsung Galaxy S23', 'Google Pixel 7', 'OnePlus 11'];
+                
+                result = {
+                    lat: lat,
+                    lng: lng,
+                    city: cities[Math.floor(Math.random() * cities.length)],
+                    country: countries[Math.floor(Math.random() * countries.length)],
+                    isp: isps[Math.floor(Math.random() * isps.length)],
+                    carrier: carriers[Math.floor(Math.random() * carriers.length)],
+                    device: devices[Math.floor(Math.random() * devices.length)],
+                    accuracy: Math.floor(Math.random() * 30) + 65
+                };
             }
             
-            // Update UI
-            updateTrackingInfo();
-            updateHistory();
-            
-            // Hide loading
-            document.getElementById('loading').classList.remove('active');
-            document.getElementById('trackingInfo').style.display = 'block';
+            return result;
         }
 
-        // Update tracking info display
-        function updateTrackingInfo() {
-            const activeSessions = Object.values(trackingSessions).filter(s => s.status === 'active').length;
-            document.getElementById('activeSessions').textContent = activeSessions;
-            document.getElementById('lastUpdateTime').textContent = new Date().toLocaleTimeString();
+        // Format phone number
+        function formatPhoneNumber(countryCode, number) {
+            return countryCode + number;
+        }
+
+        // Validate IMEI
+        function validateIMEI(imei) {
+            // Basic IMEI validation (15 digits)
+            return /^\d{15}$/.test(imei);
+        }
+
+        // Validate IP address
+        function validateIP(ip) {
+            const ipv4Regex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+            return ipv4Regex.test(ip);
+        }
+
+        // Start tracking
+        function startTracking() {
+            const loading = document.getElementById('loading');
+            const results = document.getElementById('results');
+            let value, targetValue;
             
-            // Update tracked users list
-            const trackedUsersDiv = document.getElementById('trackedUsers');
-            trackedUsersDiv.innerHTML = '';
+            // Get value based on current method
+            switch(currentMethod) {
+                case 'ip':
+                    value = document.getElementById('ipAddress').value.trim();
+                    if (!validateIP(value)) {
+                        showNotification('Invalid Input', 'Please enter a valid IP address', 'error');
+                        return;
+                    }
+                    targetValue = value;
+                    break;
+                    
+                case 'phone':
+                    const countryCode = document.getElementById('countryCode').value;
+                    const phoneNumber = document.getElementById('phoneNumber').value.trim();
+                    if (!phoneNumber || phoneNumber.length < 7) {
+                        showNotification('Invalid Input', 'Please enter a valid phone number', 'error');
+                        return;
+                    }
+                    value = formatPhoneNumber(countryCode, phoneNumber);
+                    targetValue = value;
+                    break;
+                    
+                case 'imei':
+                    value = document.getElementById('imeiNumber').value.trim();
+                    if (!validateIMEI(value)) {
+                        showNotification('Invalid Input', 'Please enter a valid 15-digit IMEI number', 'error');
+                        return;
+                    }
+                    targetValue = value;
+                    break;
+                    
+                case 'link':
+                    showNotification('Link Generated', 'Tracking link created successfully', 'success');
+                    return;
+            }
             
-            Object.values(trackingSessions).forEach(session => {
-                if (session.status === 'active') {
-                    const userDiv = document.createElement('div');
-                    userDiv.className = 'history-item';
-                    userDiv.innerHTML = `
-                        <div>
-                            <strong>${session.name}</strong><br>
-                            <span style="color: #666; font-size: 14px;">
-                                Last seen: ${session.lastUpdate ? session.lastUpdate.toLocaleTimeString() : 'Never'}
-                            </span>
+            // Show loading
+            loading.classList.add('active');
+            results.style.opacity = '0.5';
+            
+            // Simulate API delay
+            setTimeout(() => {
+                const result = simulateTracking(currentMethod, targetValue);
+                
+                // Update map
+                const popupText = `
+                    <b>Target Location</b><br>
+                    ${result.city}, ${result.country}<br>
+                    Method: ${currentMethod.toUpperCase()}<br>
+                    Value: ${targetValue}
+                `;
+                
+                updateLocationOnMap(result.lat, result.lng, popupText);
+                
+                // Update results
+                document.getElementById('currentLocation').textContent = `${result.city}, ${result.country}`;
+                document.getElementById('lastLocation').textContent = `${result.city}, ${result.country}`;
+                document.getElementById('accuracyValue').textContent = `${result.accuracy}%`;
+                document.getElementById('accuracyFill').style.width = `${result.accuracy}%`;
+                
+                // Update target details
+                updateTargetDetails(currentMethod, targetValue, result);
+                
+                // Update carrier details
+                updateCarrierDetails(currentMethod, result);
+                
+                // Update device details
+                updateDeviceDetails(currentMethod, result);
+                
+                // Hide loading
+                loading.classList.remove('active');
+                results.style.opacity = '1';
+                
+                // Add to history
+                addToHistory(currentMethod, targetValue, result);
+                
+                showNotification('Tracking Successful', `Location found for ${targetValue}`, 'success');
+                
+            }, 1500);
+        }
+
+        // Update target details
+        function updateTargetDetails(method, value, result) {
+            const targetInfo = document.getElementById('targetInfo');
+            let html = '';
+            
+            switch(method) {
+                case 'ip':
+                    html = `
+                        <div class="info-item">
+                            <div class="info-label">IP Address</div>
+                            <div class="info-value">${value}</div>
                         </div>
-                        <span class="status-indicator status-online">
-                            <i class="fas fa-circle"></i> LIVE
-                        </span>
+                        <div class="info-item">
+                            <div class="info-label">ISP</div>
+                            <div class="info-value">${result.isp}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Network Type</div>
+                            <div class="info-value">Commercial/Data Center</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Proxy/VPN</div>
+                            <div class="info-value">Not Detected</div>
+                        </div>
                     `;
+                    break;
                     
-                    userDiv.addEventListener('click', () => {
-                        if (session.lat && session.lng) {
-                            map.setView([session.lat, session.lng], 16);
-                            markers[session.id].openPopup();
-                        }
-                    });
+                case 'phone':
+                    html = `
+                        <div class="info-item">
+                            <div class="info-label">Phone Number</div>
+                            <div class="info-value">${value}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">SIM Status</div>
+                            <div class="info-value">Active</div>
+                        </div>
+                        <div class="info-label">Last Call</div>
+                        <div class="info-value">2 hours ago</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Network Mode</div>
+                            <div class="info-value">4G/LTE</div>
+                        </div>
+                    `;
+                    break;
                     
-                    trackedUsersDiv.appendChild(userDiv);
-                }
-            });
+                case 'imei':
+                    html = `
+                        <div class="info-item">
+                            <div class="info-label">IMEI Number</div>
+                            <div class="info-value">${value}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Device Status</div>
+                            <div class="info-value">Online</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Last Active</div>
+                            <div class="info-value">Just now</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Battery Level</div>
+                            <div class="info-value">78%</div>
+                        </div>
+                    `;
+                    break;
+            }
+            
+            targetInfo.innerHTML = html;
+            document.getElementById('targetDetails').style.display = 'block';
         }
 
-        // Update history
-        function updateHistory() {
-            trackingHistory = Object.values(trackingSessions)
-                .filter(s => s.lastUpdate)
-                .map(s => ({
-                    id: s.id,
-                    name: s.name,
-                    time: s.lastUpdate,
-                    location: s.lat && s.lng ? `${s.lat.toFixed(4)}, ${s.lng.toFixed(4)}` : 'Unknown'
-                }))
-                .sort((a, b) => new Date(b.time) - new Date(a.time));
+        // Update carrier details
+        function updateCarrierDetails(method, result) {
+            const carrierInfo = document.getElementById('carrierInfo');
+            let html = '';
+            
+            if (method === 'phone' || method === 'imei') {
+                html = `
+                    <div class="info-item">
+                        <div class="info-label">Carrier</div>
+                        <div class="info-value">${result.carrier || 'Unknown'}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Network</div>
+                        <div class="info-value">4G/LTE</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Signal Strength</div>
+                        <div class="info-value">Excellent</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Data Usage</div>
+                        <div class="info-value">2.4 GB this month</div>
+                    </div>
+                `;
+                document.getElementById('carrierDetails').style.display = 'block';
+            } else {
+                document.getElementById('carrierDetails').style.display = 'none';
+            }
+            
+            carrierInfo.innerHTML = html;
+        }
+
+        // Update device details
+        function updateDeviceDetails(method, result) {
+            const deviceInfo = document.getElementById('deviceInfo');
+            let html = '';
+            
+            if (method === 'imei' || method === 'phone') {
+                html = `
+                    <div class="info-item">
+                        <div class="info-label">Device Model</div>
+                        <div class="info-value">${result.device || 'Smartphone'}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">OS Version</div>
+                        <div class="info-value">Android 13 / iOS 16</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Manufacturer</div>
+                        <div class="info-value">Apple/Samsung/Google</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Last Update</div>
+                        <div class="info-value">7 days ago</div>
+                    </div>
+                `;
+                document.getElementById('deviceDetails').style.display = 'block';
+            } else {
+                document.getElementById('deviceDetails').style.display = 'none';
+            }
+            
+            deviceInfo.innerHTML = html;
+        }
+
+        // Add to tracking history
+        function addToHistory(method, value, result) {
+            const historyItem = {
+                id: Date.now(),
+                method: method,
+                value: value,
+                location: `${result.city}, ${result.country}`,
+                timestamp: new Date().toISOString(),
+                coordinates: { lat: result.lat, lng: result.lng }
+            };
+            
+            trackingHistory.unshift(historyItem);
+            if (trackingHistory.length > 10) {
+                trackingHistory = trackingHistory.slice(0, 10);
+            }
             
             localStorage.setItem('trackingHistory', JSON.stringify(trackingHistory));
-            displayHistory();
+            updateHistoryList();
         }
 
-        // Display history
-        function displayHistory() {
-            const historyDiv = document.getElementById('trackingHistory');
-            historyDiv.innerHTML = '';
+        // Update history list
+        function updateHistoryList() {
+            const historyList = document.getElementById('trackingHistory');
+            historyList.innerHTML = '';
             
             if (trackingHistory.length === 0) {
-                historyDiv.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">No tracking history yet</div>';
+                historyList.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8;">No tracking history yet</div>';
                 return;
             }
             
-            trackingHistory.slice(0, 10).forEach(item => {
+            trackingHistory.forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'history-item';
                 div.innerHTML = `
-                    <div>
-                        <strong>${item.name}</strong><br>
-                        <span style="color: #666; font-size: 14px;">${item.location}</span>
+                    <div class="history-info">
+                        <i class="fas fa-${getMethodIcon(item.method)}" style="color: ${getMethodColor(item.method)};"></i>
+                        <div>
+                            <div>${item.value}</div>
+                            <div class="history-time">${new Date(item.timestamp).toLocaleTimeString()}</div>
+                        </div>
                     </div>
-                    <span style="color: #666; font-size: 14px;">
-                        ${new Date(item.time).toLocaleTimeString()}
-                    </span>
+                    <div>${item.location}</div>
                 `;
                 
                 div.addEventListener('click', () => {
-                    const session = trackingSessions[item.id];
-                    if (session && session.lat && session.lng) {
-                        map.setView([session.lat, session.lng], 15);
-                        if (markers[item.id]) {
-                            markers[item.id].openPopup();
-                        }
-                    }
+                    // Recenter map on this location
+                    updateLocationOnMap(item.coordinates.lat, item.coordinates.lng, 
+                        `<b>History Item</b><br>${item.value}<br>${item.location}`);
+                    switchTab('track');
                 });
                 
-                historyDiv.appendChild(div);
+                historyList.appendChild(div);
             });
         }
 
-        // Start live tracking updates
-        function startLiveTracking() {
-            if (liveTrackingInterval) return;
-            
-            isTracking = true;
-            document.getElementById('startLiveTrackingBtn').style.display = 'none';
-            showNotification('Live Tracking', 'Live updates activated', 'success');
-            
-            // Simulate updates for active sessions
-            liveTrackingInterval = setInterval(() => {
-                Object.values(trackingSessions).forEach(session => {
-                    if (session.status === 'active' && session.lat && session.lng) {
-                        // Simulate small movement
-                        const newLat = session.lat + (Math.random() - 0.5) * 0.0001;
-                        const newLng = session.lng + (Math.random() - 0.5) * 0.0001;
-                        
-                        updateTrackedLocation(session.id, newLat, newLng, session.accuracy || 50);
-                    }
-                });
-            }, 5000);
+        // Get method icon
+        function getMethodIcon(method) {
+            const icons = {
+                ip: 'network-wired',
+                phone: 'phone-alt',
+                imei: 'mobile-alt',
+                link: 'link'
+            };
+            return icons[method] || 'search';
         }
 
-        // Stop all tracking
-        function stopAllTracking() {
-            if (liveTrackingInterval) {
-                clearInterval(liveTrackingInterval);
-                liveTrackingInterval = null;
+        // Get method color
+        function getMethodColor(method) {
+            const colors = {
+                ip: '#6366f1',
+                phone: '#10b981',
+                imei: '#f59e0b',
+                link: '#ec4899'
+            };
+            return colors[method] || '#94a3b8';
+        }
+
+        // Start live tracking
+        function startLiveTracking() {
+            if (liveTracking) return;
+            
+            liveTracking = true;
+            document.getElementById('startLiveBtn').style.display = 'none';
+            document.getElementById('stopLiveBtn').style.display = 'block';
+            document.getElementById('trackingStatus').textContent = 'LIVE TRACKING';
+            document.getElementById('trackingStatus').style.color = '#10b981';
+            
+            // Simulate live updates
+            trackingInterval = setInterval(() => {
+                if (marker) {
+                    const latLng = marker.getLatLng();
+                    // Simulate small movement
+                    const newLat = latLng.lat + (Math.random() - 0.5) * 0.01;
+                    const newLng = latLng.lng + (Math.random() - 0.5) * 0.01;
+                    
+                    updateLocationOnMap(newLat, newLng, 'Live Tracking - Moving...');
+                    
+                    // Update last location
+                    const now = new Date();
+                    document.getElementById('lastLocation').textContent = 
+                        `Updated: ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+                }
+            }, 3000);
+            
+            showNotification('Live Tracking Started', 'Target location is being monitored in real-time', 'success');
+        }
+
+        // Stop live tracking
+        function stopLiveTracking() {
+            liveTracking = false;
+            document.getElementById('startLiveBtn').style.display = 'block';
+            document.getElementById('stopLiveBtn').style.display = 'none';
+            document.getElementById('trackingStatus').textContent = 'Active';
+            document.getElementById('trackingStatus').style.color = '';
+            
+            if (trackingInterval) {
+                clearInterval(trackingInterval);
             }
             
-            isTracking = false;
-            document.getElementById('startLiveTrackingBtn').style.display = 'block';
-            
-            // Clear all markers
-            Object.values(markers).forEach(marker => map.removeLayer(marker));
-            markers = {};
-            
-            // Clear accuracy circles
-            Object.values(trackingSessions).forEach(session => {
-                if (session.accuracyCircle) {
-                    map.removeLayer(session.accuracyCircle);
-                }
-            });
-            
-            trackingSessions = {};
-            updateTrackingInfo();
-            showNotification('Tracking Stopped', 'All tracking sessions cleared', 'warning');
+            showNotification('Live Tracking Stopped', 'Real-time monitoring ended', 'warning');
         }
 
         // Export data
         function exportData() {
             const data = {
-                exportedAt: new Date().toISOString(),
-                sessions: Object.values(trackingSessions),
-                history: trackingHistory
+                timestamp: new Date().toISOString(),
+                method: currentMethod,
+                results: {
+                    location: document.getElementById('currentLocation').textContent,
+                    accuracy: document.getElementById('accuracyValue').textContent,
+                    status: document.getElementById('trackingStatus').textContent
+                }
             };
             
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -1131,22 +1216,35 @@
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
             
-            showNotification('Data Exported', 'Tracking data downloaded', 'success');
+            showNotification('Data Exported', 'Tracking data downloaded as JSON', 'success');
         }
 
-        // Clear history
-        function clearHistory() {
-            if (confirm('Clear all tracking history?')) {
-                trackingHistory = [];
-                localStorage.removeItem('trackingHistory');
-                displayHistory();
-                showNotification('History Cleared', 'All history removed', 'warning');
-            }
+        // Generate share link
+        function generateShareLink() {
+            const linkOutput = document.getElementById('linkOutput');
+            const uniqueId = 'track_' + Math.random().toString(36).substring(2, 15);
+            const shareLink = `${window.location.origin}${window.location.pathname}?share=${uniqueId}`;
+            
+            document.getElementById('shareLink').value = shareLink;
+            linkOutput.style.display = 'block';
+            
+            showNotification('Link Generated', 'Share this link for real-time tracking', 'success');
+        }
+
+        // Copy link to clipboard
+        function copyLink() {
+            const shareLink = document.getElementById('shareLink');
+            shareLink.select();
+            shareLink.setSelectionRange(0, 99999);
+            
+            navigator.clipboard.writeText(shareLink.value).then(() => {
+                showNotification('Copied!', 'Link copied to clipboard', 'success');
+            });
         }
 
         // Switch tabs
         function switchTab(tabName) {
-            // Update tabs
+            // Update tab buttons
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.classList.remove('active');
                 if (tab.dataset.tab === tabName) {
@@ -1154,7 +1252,7 @@
                 }
             });
             
-            // Update content
+            // Update tab content
             document.querySelectorAll('.tab-content').forEach(content => {
                 content.classList.remove('active');
                 if (content.id === tabName + 'Tab') {
@@ -1163,220 +1261,90 @@
             });
         }
 
-        // Check URL for tracking parameters
-        function checkURLParameters() {
-            const params = new URLSearchParams(window.location.search);
-            const trackId = params.get('track');
-            const name = params.get('name');
+        // Switch tracking method
+        function switchMethod(method) {
+            currentMethod = method;
             
-            if (trackId && name) {
-                // This is a tracking link - show sharing interface
-                document.body.innerHTML = `
-                    <div class="container">
-                        <header>
-                            <h1><i class="fas fa-location-arrow"></i> Share Your Location</h1>
-                            <p class="subtitle">${decodeURIComponent(name)} wants to see your location</p>
-                        </header>
-                        
-                        <div class="panel" style="max-width: 600px; margin: 0 auto; text-align: center;">
-                            <h2><i class="fas fa-user-check"></i> Location Request</h2>
-                            <p style="color: #666; margin: 20px 0; font-size: 18px;">
-                                Click below to share your live location with <strong>${decodeURIComponent(name)}</strong>
-                            </p>
-                            
-                            <div style="margin: 40px 0;">
-                                <div style="font-size: 60px; color: #3949ab;">
-                                    <i class="fas fa-map-marker-alt"></i>
-                                </div>
-                                <h3>Real-time Location Sharing</h3>
-                                <p style="color: #666; margin: 15px 0;">
-                                    Your location will be updated automatically while this page is open
-                                </p>
-                            </div>
-                            
-                            <button class="btn btn-primary btn-lg" id="shareBtn" style="width: 100%; padding: 25px; font-size: 20px;">
-                                <i class="fas fa-location-crosshairs"></i> Share My Location Now
-                            </button>
-                            
-                            <button class="btn btn-danger" id="declineBtn" style="margin-top: 20px;">
-                                <i class="fas fa-times"></i> Decline
-                            </button>
-                            
-                            <div class="disclaimer" style="margin-top: 30px;">
-                                <i class="fas fa-shield-alt"></i> Your location is encrypted and only shared with the person who sent this link
-                            </div>
-                        </div>
-                    </div>
-                `;
-                
-                // Add event listeners
-                document.getElementById('shareBtn').addEventListener('click', () => startSharingForLink(trackId));
-                document.getElementById('declineBtn').addEventListener('click', () => window.close());
-                
-                return true;
-            }
-            return false;
-        }
-
-        // Start sharing for a specific tracking link
-        function startSharingForLink(trackId) {
-            if (!navigator.geolocation) {
-                alert('Geolocation not supported by your browser');
-                return;
-            }
-            
-            showNotification('Starting', 'Getting your location...', 'info');
-            
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const { latitude, longitude, accuracy } = position.coords;
-                    
-                    // Update UI
-                    document.body.innerHTML = `
-                        <div class="container">
-                            <header>
-                                <h1><i class="fas fa-satellite-dish"></i> Sharing Active</h1>
-                                <p class="subtitle">Your location is now being shared</p>
-                            </header>
-                            
-                            <div class="panel" style="max-width: 600px; margin: 0 auto;">
-                                <h2><i class="fas fa-check-circle" style="color: #43a047;"></i> Location Shared Successfully</h2>
-                                
-                                <div style="text-align: center; margin: 30px 0;">
-                                    <div style="font-size: 80px; color: #43a047;">
-                                        <i class="fas fa-check-circle"></i>
-                                    </div>
-                                    <h3>Live Sharing Active</h3>
-                                </div>
-                                
-                                <div class="location-info-grid">
-                                    <div class="info-card">
-                                        <div class="info-label">Latitude</div>
-                                        <div class="info-value" id="liveLat">${latitude.toFixed(6)}</div>
-                                    </div>
-                                    <div class="info-card">
-                                        <div class="info-label">Longitude</div>
-                                        <div class="info-value" id="liveLng">${longitude.toFixed(6)}</div>
-                                    </div>
-                                    <div class="info-card">
-                                        <div class="info-label">Accuracy</div>
-                                        <div class="info-value" id="liveAccuracy">${Math.round(accuracy)}m</div>
-                                    </div>
-                                    <div class="info-card">
-                                        <div class="info-label">Last Update</div>
-                                        <div class="info-value" id="liveUpdate">${new Date().toLocaleTimeString()}</div>
-                                    </div>
-                                </div>
-                                
-                                <p style="color: #666; margin: 25px 0; text-align: center;">
-                                    <i class="fas fa-info-circle"></i> Keep this page open to continue sharing your location
-                                </p>
-                                
-                                <button class="btn btn-danger" id="stopBtn" style="width: 100%; padding: 20px; font-size: 18px;">
-                                    <i class="fas fa-stop"></i> Stop Sharing & Close Page
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                    
-                    document.getElementById('stopBtn').addEventListener('click', () => window.close());
-                    
-                    // Start continuous updates
-                    const watchId = navigator.geolocation.watchPosition(
-                        (pos) => {
-                            const { latitude, longitude, accuracy } = pos.coords;
-                            document.getElementById('liveLat').textContent = latitude.toFixed(6);
-                            document.getElementById('liveLng').textContent = longitude.toFixed(6);
-                            document.getElementById('liveAccuracy').textContent = `${Math.round(accuracy)}m`;
-                            document.getElementById('liveUpdate').textContent = new Date().toLocaleTimeString();
-                            
-                            // In a real app, send to server
-                            // For demo, store in localStorage
-                            localStorage.setItem(`track_${trackId}`, JSON.stringify({
-                                lat: latitude,
-                                lng: longitude,
-                                accuracy: accuracy,
-                                timestamp: new Date().toISOString()
-                            }));
-                        },
-                        (error) => {
-                            console.error('Error:', error);
-                        },
-                        {
-                            enableHighAccuracy: true,
-                            maximumAge: 5000,
-                            timeout: 10000
-                        }
-                    );
-                    
-                    // Clean up on close
-                    window.addEventListener('beforeunload', () => {
-                        navigator.geolocation.clearWatch(watchId);
-                        localStorage.removeItem(`track_${trackId}`);
-                    });
-                },
-                (error) => {
-                    alert('Failed to get location. Please allow location access.');
+            // Update method cards
+            document.querySelectorAll('.method-card').forEach(card => {
+                card.classList.remove('active');
+                if (card.dataset.method === method) {
+                    card.classList.add('active');
                 }
-            );
+            });
+            
+            // Show/hide input fields
+            document.querySelectorAll('.method-input').forEach(input => {
+                input.style.display = 'none';
+            });
+            
+            document.getElementById(method + 'Input').style.display = 'block';
         }
 
-        // Initialize app
-        document.addEventListener('DOMContentLoaded', () => {
-            // Check if this is a tracking link
-            if (checkURLParameters()) {
-                return;
-            }
+        // Clear history
+        function clearHistory() {
+            if (trackingHistory.length === 0) return;
             
-            // Initialize main app
+            if (confirm('Clear all tracking history?')) {
+                trackingHistory = [];
+                localStorage.removeItem('trackingHistory');
+                updateHistoryList();
+                showNotification('History Cleared', 'All tracking history has been removed', 'warning');
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize map
             initMap();
-            displayHistory();
             
             // Set up event listeners
-            document.getElementById('generateLinkBtn').addEventListener('click', generateTrackingLink);
-            document.getElementById('copyLinkBtn').addEventListener('click', copyLink);
-            document.getElementById('sendSMSBtn').addEventListener('click', sendSMS);
-            document.getElementById('testLinkBtn').addEventListener('click', () => {
-                const link = document.getElementById('shareLink').value;
-                if (link) window.open(link, '_blank');
-            });
-            
-            document.getElementById('shareMyLocationBtn').addEventListener('click', startSharingLocation);
-            document.getElementById('stopSharingBtn').addEventListener('click', stopSharing);
-            
-            document.getElementById('startLiveTrackingBtn').addEventListener('click', startLiveTracking);
-            document.getElementById('stopAllTrackingBtn').addEventListener('click', stopAllTracking);
+            document.getElementById('trackButton').addEventListener('click', startTracking);
+            document.getElementById('startLiveBtn').addEventListener('click', startLiveTracking);
+            document.getElementById('stopLiveBtn').addEventListener('click', stopLiveTracking);
             document.getElementById('exportDataBtn').addEventListener('click', exportData);
+            document.getElementById('generateLinkBtn').addEventListener('click', generateShareLink);
+            document.getElementById('copyLinkBtn').addEventListener('click', copyLink);
             document.getElementById('clearHistoryBtn').addEventListener('click', clearHistory);
-            
-            // Tab switching
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.addEventListener('click', () => switchTab(tab.dataset.tab));
-            });
             
             // Method switching
             document.querySelectorAll('.method-card').forEach(card => {
                 card.addEventListener('click', () => {
-                    document.querySelectorAll('.method-card').forEach(c => c.classList.remove('active'));
-                    card.classList.add('active');
+                    switchMethod(card.dataset.method);
                 });
             });
             
-            // Check for existing tracking data periodically
-            setInterval(() => {
-                Object.keys(trackingSessions).forEach(sessionId => {
-                    const data = localStorage.getItem(`track_${sessionId}`);
-                    if (data) {
-                        const location = JSON.parse(data);
-                        updateTrackedLocation(sessionId, location.lat, location.lng, location.accuracy);
+            // Tab switching
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    switchTab(tab.dataset.tab);
+                });
+            });
+            
+            // Enter key support
+            document.querySelectorAll('input').forEach(input => {
+                input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        startTracking();
                     }
                 });
-            }, 3000);
+            });
             
-            // Show welcome message
+            // Load history
+            updateHistoryList();
+            
+            // Demo notification
             setTimeout(() => {
-                showNotification('System Ready', 'Real Location Tracker is active', 'success');
+                showNotification('System Ready', 'CyberTracker Pro is initialized and ready', 'success');
             }, 1000);
+            
+            // Check for share parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            const shareId = urlParams.get('share');
+            if (shareId) {
+                switchMethod('link');
+                showNotification('Share Session', 'You are in tracking share mode', 'info');
+            }
         });
     </script>
 </body>
